@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, numeric, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -11,47 +11,83 @@ export const agents = pgTable("agents", {
   region: text("region").notNull(),
 });
 
-export const clients = pgTable("clients", {
+export const credits = pgTable("credits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  phone: text("phone").notNull(),
-  address: text("address").notNull(),
+  code: text("code").notNull().unique(),
+  nom: text("nom").notNull(),
+  prenom: text("prenom").notNull(),
+  telephone: text("telephone").notNull(),
+  activite: text("activite").notNull(),
+  adresse: text("adresse").notNull(),
+  zone: text("zone").notNull(),
+  nombreCompte: integer("nombre_compte").notNull(),
+  dateCreation: timestamp("date_creation").notNull(),
+  garantie: text("garantie").notNull(),
+  echeance: integer("echeance").notNull(),
+  status: text("status").notNull().default("actif"),
   agentId: varchar("agent_id").notNull(),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at"),
 });
 
-export const credits = pgTable("credits", {
+export const compteCourants = pgTable("compte_courants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  clientId: varchar("client_id").notNull(),
-  amount: numeric("amount").notNull(),
-  remainingBalance: numeric("remaining_balance").notNull(),
-  interestRate: numeric("interest_rate").notNull(),
-  status: text("status").notNull(),
-  startDate: timestamp("start_date").notNull(),
-  dueDate: timestamp("due_date").notNull(),
-  isSettled: boolean("is_settled").notNull().default(false),
+  code: text("code").notNull().unique(),
+  nom: text("nom").notNull(),
+  prenom: text("prenom").notNull(),
+  telephone: text("telephone").notNull(),
+  activite: text("activite").notNull(),
+  adresse: text("adresse").notNull(),
+  zone: text("zone").notNull(),
+  dateCreation: timestamp("date_creation").notNull(),
+  status: text("status").notNull().default("actif"),
+  agentId: varchar("agent_id").notNull(),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
 });
 
-export const savingsAccounts = pgTable("savings_accounts", {
+export const cartePointages = pgTable("carte_pointages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  clientId: varchar("client_id").notNull(),
-  type: text("type").notNull(),
-  balance: numeric("balance").notNull(),
-  lastDepositDate: timestamp("last_deposit_date"),
-  isSettled: boolean("is_settled").notNull().default(false),
+  code: text("code").notNull().unique(),
+  nom: text("nom").notNull(),
+  prenom: text("prenom").notNull(),
+  telephone: text("telephone").notNull(),
+  activite: text("activite").notNull(),
+  adresse: text("adresse").notNull(),
+  zone: text("zone").notNull(),
+  montant: numeric("montant").notNull(),
+  dateCreation: timestamp("date_creation").notNull(),
+  status: text("status").notNull().default("actif"),
+  agentId: varchar("agent_id").notNull(),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertAgentSchema = createInsertSchema(agents).omit({ id: true });
-export const insertClientSchema = createInsertSchema(clients).omit({ id: true, isDeleted: true, deletedAt: true });
-export const insertCreditSchema = createInsertSchema(credits).omit({ id: true });
-export const insertSavingsAccountSchema = createInsertSchema(savingsAccounts).omit({ id: true });
+export const insertCreditSchema = createInsertSchema(credits).omit({ 
+  id: true, 
+  isDeleted: true, 
+  deletedAt: true,
+  status: true,
+});
+export const insertCompteCourantSchema = createInsertSchema(compteCourants).omit({ 
+  id: true, 
+  isDeleted: true, 
+  deletedAt: true,
+  status: true,
+});
+export const insertCartePointageSchema = createInsertSchema(cartePointages).omit({ 
+  id: true, 
+  isDeleted: true, 
+  deletedAt: true,
+  status: true,
+});
 
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Agent = typeof agents.$inferSelect;
-export type InsertClient = z.infer<typeof insertClientSchema>;
-export type Client = typeof clients.$inferSelect;
 export type InsertCredit = z.infer<typeof insertCreditSchema>;
 export type Credit = typeof credits.$inferSelect;
-export type InsertSavingsAccount = z.infer<typeof insertSavingsAccountSchema>;
-export type SavingsAccount = typeof savingsAccounts.$inferSelect;
+export type InsertCompteCourant = z.infer<typeof insertCompteCourantSchema>;
+export type CompteCourant = typeof compteCourants.$inferSelect;
+export type InsertCartePointage = z.infer<typeof insertCartePointageSchema>;
+export type CartePointage = typeof cartePointages.$inferSelect;

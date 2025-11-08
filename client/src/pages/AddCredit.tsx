@@ -20,20 +20,16 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { insertCreditSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { z } from "zod";
 
-const creditSchema = z.object({
-  nom: z.string().min(2, "Le nom est requis"),
-  prenom: z.string().min(2, "Le prénom est requis"),
-  telephone: z.string().min(10, "Numéro de téléphone invalide"),
-  activite: z.string().min(2, "L'activité est requise"),
-  adresse: z.string().min(5, "L'adresse est requise"),
-  zone: z.string().min(1, "La zone est requise"),
-  nombreCompte: z.string().min(1, "Le nombre de compte est requis"),
+const formSchema = insertCreditSchema.extend({
+  nombreCompte: z.coerce.number().min(1, "Le nombre de compte est requis"),
   dateCreation: z.string().min(1, "La date de création est requise"),
-  garantie: z.string().min(2, "La garantie est requise"),
-  echeance: z.string().min(1, "L'échéance est requise"),
+  echeance: z.coerce.number().min(1, "L'échéance est requise"),
 });
 
 const zones = [
@@ -64,7 +60,7 @@ export default function AddCredit() {
   }, []);
 
   const form = useForm({
-    resolver: zodResolver(creditSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       nom: "",
       prenom: "",
@@ -72,20 +68,48 @@ export default function AddCredit() {
       activite: "",
       adresse: "",
       zone: "",
-      nombreCompte: "",
+      nombreCompte: 0,
       dateCreation: "",
       garantie: "",
-      echeance: "",
+      echeance: 0,
+      code: "",
+      agentId: "default-agent",
     },
   });
 
-  const onSubmit = (data: any) => {
-    console.log("Crédit form submitted:", { ...data, codeCompte });
-    toast({
-      title: "Succès",
-      description: "Crédit créé avec succès",
-    });
-    setLocation("/add");
+  const createCreditMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      const response = await fetch("/api/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          code: codeCompte,
+          dateCreation: new Date(data.dateCreation),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create credit");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
+      toast({
+        title: "Succès",
+        description: "Crédit créé avec succès",
+      });
+      setLocation("/");
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Échec de la création du crédit",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    createCreditMutation.mutate(data);
   };
 
   return (
@@ -258,6 +282,7 @@ export default function AddCredit() {
                       className="h-12"
                       data-testid="input-nombre-compte"
                       {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -310,8 +335,8 @@ export default function AddCredit() {
                 <FormItem>
                   <FormLabel>Échéance (jours)</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    defaultValue={field.value?.toString()}
                   >
                     <FormControl>
                       <SelectTrigger
@@ -336,8 +361,9 @@ export default function AddCredit() {
               type="submit"
               className="w-full h-12"
               data-testid="button-submit"
+              disabled={createCreditMutation.isPending}
             >
-              Créer le crédit
+              {createCreditMutation.isPending ? "Création..." : "Créer le crédit"}
             </Button>
           </form>
         </Form>

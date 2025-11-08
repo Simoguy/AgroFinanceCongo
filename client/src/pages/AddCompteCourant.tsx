@@ -20,16 +20,13 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { insertCompteCourantSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { z } from "zod";
 
-const compteCourantSchema = z.object({
-  nom: z.string().min(2, "Le nom est requis"),
-  prenom: z.string().min(2, "Le prénom est requis"),
-  telephone: z.string().min(10, "Numéro de téléphone invalide"),
-  activite: z.string().min(2, "L'activité est requise"),
-  adresse: z.string().min(5, "L'adresse est requise"),
-  zone: z.string().min(1, "La zone est requise"),
+const formSchema = insertCompteCourantSchema.extend({
   dateCreation: z.string().min(1, "La date de création est requise"),
 });
 
@@ -61,7 +58,7 @@ export default function AddCompteCourant() {
   }, []);
 
   const form = useForm({
-    resolver: zodResolver(compteCourantSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       nom: "",
       prenom: "",
@@ -70,16 +67,44 @@ export default function AddCompteCourant() {
       adresse: "",
       zone: "",
       dateCreation: "",
+      code: "",
+      agentId: "default-agent",
     },
   });
 
-  const onSubmit = (data: any) => {
-    console.log("Compte courant form submitted:", { ...data, codeCompte });
-    toast({
-      title: "Succès",
-      description: "Compte courant créé avec succès",
-    });
-    setLocation("/add");
+  const createCompteMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      const response = await fetch("/api/compte-courants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          code: codeCompte,
+          dateCreation: new Date(data.dateCreation),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create compte courant");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
+      toast({
+        title: "Succès",
+        description: "Compte courant créé avec succès",
+      });
+      setLocation("/");
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Échec de la création du compte courant",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
+    createCompteMutation.mutate(data);
   };
 
   return (
@@ -261,8 +286,9 @@ export default function AddCompteCourant() {
               type="submit"
               className="w-full h-12"
               data-testid="button-submit"
+              disabled={createCompteMutation.isPending}
             >
-              Créer le compte courant
+              {createCompteMutation.isPending ? "Création..." : "Créer le compte courant"}
             </Button>
           </form>
         </Form>

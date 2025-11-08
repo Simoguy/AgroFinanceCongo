@@ -1,39 +1,49 @@
 import {
   type Agent,
   type InsertAgent,
-  type Client,
-  type InsertClient,
   type Credit,
   type InsertCredit,
-  type SavingsAccount,
-  type InsertSavingsAccount,
+  type CompteCourant,
+  type InsertCompteCourant,
+  type CartePointage,
+  type InsertCartePointage,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
   createAgent(agent: InsertAgent): Promise<Agent>;
-  getClient(id: string): Promise<Client | undefined>;
-  getClients(agentId: string): Promise<Client[]>;
-  createClient(client: InsertClient): Promise<Client>;
-  deleteClient(id: string): Promise<void>;
-  getCredits(clientId: string): Promise<Credit[]>;
+  
+  getCredits(agentId?: string, status?: string): Promise<Credit[]>;
+  getCredit(id: string): Promise<Credit | undefined>;
   createCredit(credit: InsertCredit): Promise<Credit>;
-  getSavingsAccounts(clientId: string): Promise<SavingsAccount[]>;
-  createSavingsAccount(account: InsertSavingsAccount): Promise<SavingsAccount>;
+  updateCreditStatus(id: string, status: string): Promise<Credit | undefined>;
+  deleteCredit(id: string): Promise<void>;
+  
+  getCompteCourants(agentId?: string, status?: string): Promise<CompteCourant[]>;
+  getCompteCourant(id: string): Promise<CompteCourant | undefined>;
+  createCompteCourant(compte: InsertCompteCourant): Promise<CompteCourant>;
+  updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined>;
+  deleteCompteCourant(id: string): Promise<void>;
+  
+  getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]>;
+  getCartePointage(id: string): Promise<CartePointage | undefined>;
+  createCartePointage(carte: InsertCartePointage): Promise<CartePointage>;
+  updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined>;
+  deleteCartePointage(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private agents: Map<string, Agent>;
-  private clients: Map<string, Client>;
   private credits: Map<string, Credit>;
-  private savingsAccounts: Map<string, SavingsAccount>;
+  private compteCourants: Map<string, CompteCourant>;
+  private cartePointages: Map<string, CartePointage>;
 
   constructor() {
     this.agents = new Map();
-    this.clients = new Map();
     this.credits = new Map();
-    this.savingsAccounts = new Map();
+    this.compteCourants = new Map();
+    this.cartePointages = new Map();
   }
 
   async getAgent(id: string): Promise<Agent | undefined> {
@@ -47,72 +57,160 @@ export class MemStorage implements IStorage {
     return agent;
   }
 
-  async getClient(id: string): Promise<Client | undefined> {
-    return this.clients.get(id);
-  }
-
-  async getClients(agentId: string): Promise<Client[]> {
-    return Array.from(this.clients.values()).filter(
-      (client) => client.agentId === agentId
+  async getCredits(agentId?: string, status?: string): Promise<Credit[]> {
+    let credits = Array.from(this.credits.values()).filter(
+      (credit) => !credit.isDeleted
     );
-  }
-
-  async createClient(insertClient: InsertClient): Promise<Client> {
-    const id = randomUUID();
-    const client: Client = { 
-      ...insertClient, 
-      id,
-      isDeleted: false,
-      deletedAt: null,
-    };
-    this.clients.set(id, client);
-    return client;
-  }
-
-  async deleteClient(id: string): Promise<void> {
-    const client = this.clients.get(id);
-    if (client) {
-      client.isDeleted = true;
-      client.deletedAt = new Date();
-      this.clients.set(id, client);
+    
+    if (agentId) {
+      credits = credits.filter((credit) => credit.agentId === agentId);
     }
+    
+    if (status) {
+      credits = credits.filter((credit) => credit.status === status);
+    }
+    
+    return credits;
   }
 
-  async getCredits(clientId: string): Promise<Credit[]> {
-    return Array.from(this.credits.values()).filter(
-      (credit) => credit.clientId === clientId
-    );
+  async getCredit(id: string): Promise<Credit | undefined> {
+    return this.credits.get(id);
   }
 
   async createCredit(insertCredit: InsertCredit): Promise<Credit> {
     const id = randomUUID();
-    const credit: Credit = { 
-      ...insertCredit, 
+    const credit: Credit = {
+      ...insertCredit,
       id,
-      isSettled: insertCredit.isSettled ?? false,
+      status: "actif",
+      isDeleted: false,
+      deletedAt: null,
     };
     this.credits.set(id, credit);
     return credit;
   }
 
-  async getSavingsAccounts(clientId: string): Promise<SavingsAccount[]> {
-    return Array.from(this.savingsAccounts.values()).filter(
-      (account) => account.clientId === clientId
-    );
+  async updateCreditStatus(id: string, status: string): Promise<Credit | undefined> {
+    const credit = this.credits.get(id);
+    if (credit) {
+      credit.status = status;
+      this.credits.set(id, credit);
+      return credit;
+    }
+    return undefined;
   }
 
-  async createSavingsAccount(
-    insertAccount: InsertSavingsAccount
-  ): Promise<SavingsAccount> {
+  async deleteCredit(id: string): Promise<void> {
+    const credit = this.credits.get(id);
+    if (credit) {
+      credit.isDeleted = true;
+      credit.deletedAt = new Date();
+      this.credits.set(id, credit);
+    }
+  }
+
+  async getCompteCourants(agentId?: string, status?: string): Promise<CompteCourant[]> {
+    let comptes = Array.from(this.compteCourants.values()).filter(
+      (compte) => !compte.isDeleted
+    );
+    
+    if (agentId) {
+      comptes = comptes.filter((compte) => compte.agentId === agentId);
+    }
+    
+    if (status) {
+      comptes = comptes.filter((compte) => compte.status === status);
+    }
+    
+    return comptes;
+  }
+
+  async getCompteCourant(id: string): Promise<CompteCourant | undefined> {
+    return this.compteCourants.get(id);
+  }
+
+  async createCompteCourant(insertCompte: InsertCompteCourant): Promise<CompteCourant> {
     const id = randomUUID();
-    const account: SavingsAccount = { 
-      ...insertAccount, 
+    const compte: CompteCourant = {
+      ...insertCompte,
       id,
-      isSettled: insertAccount.isSettled ?? false,
-      lastDepositDate: insertAccount.lastDepositDate ?? null,
+      status: "actif",
+      isDeleted: false,
+      deletedAt: null,
     };
-    this.savingsAccounts.set(id, account);
-    return account;
+    this.compteCourants.set(id, compte);
+    return compte;
+  }
+
+  async updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined> {
+    const compte = this.compteCourants.get(id);
+    if (compte) {
+      compte.status = status;
+      this.compteCourants.set(id, compte);
+      return compte;
+    }
+    return undefined;
+  }
+
+  async deleteCompteCourant(id: string): Promise<void> {
+    const compte = this.compteCourants.get(id);
+    if (compte) {
+      compte.isDeleted = true;
+      compte.deletedAt = new Date();
+      this.compteCourants.set(id, compte);
+    }
+  }
+
+  async getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]> {
+    let cartes = Array.from(this.cartePointages.values()).filter(
+      (carte) => !carte.isDeleted
+    );
+    
+    if (agentId) {
+      cartes = cartes.filter((carte) => carte.agentId === agentId);
+    }
+    
+    if (status) {
+      cartes = cartes.filter((carte) => carte.status === status);
+    }
+    
+    return cartes;
+  }
+
+  async getCartePointage(id: string): Promise<CartePointage | undefined> {
+    return this.cartePointages.get(id);
+  }
+
+  async createCartePointage(insertCarte: InsertCartePointage): Promise<CartePointage> {
+    const id = randomUUID();
+    const carte: CartePointage = {
+      ...insertCarte,
+      id,
+      status: "actif",
+      isDeleted: false,
+      deletedAt: null,
+    };
+    this.cartePointages.set(id, carte);
+    return carte;
+  }
+
+  async updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined> {
+    const carte = this.cartePointages.get(id);
+    if (carte) {
+      carte.status = status;
+      this.cartePointages.set(id, carte);
+      return carte;
+    }
+    return undefined;
+  }
+
+  async deleteCartePointage(id: string): Promise<void> {
+    const carte = this.cartePointages.get(id);
+    if (carte) {
+      carte.isDeleted = true;
+      carte.deletedAt = new Date();
+      this.cartePointages.set(id, carte);
+    }
   }
 }
 
