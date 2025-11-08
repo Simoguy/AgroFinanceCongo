@@ -12,6 +12,9 @@ import Contencieux from "@/pages/Contencieux";
 import Performance from "@/pages/Performance";
 import Corbeille from "@/pages/Corbeille";
 import Add from "@/pages/Add";
+import AddCredit from "@/pages/AddCredit";
+import AddCompteCourant from "@/pages/AddCompteCourant";
+import AddCartePointage from "@/pages/AddCartePointage";
 import Profile from "@/pages/Profile";
 
 function Router() {
@@ -25,6 +28,9 @@ function Router() {
       <Route path="/performance" component={Performance} />
       <Route path="/corbeille" component={Corbeille} />
       <Route path="/add" component={Add} />
+      <Route path="/add/credit" component={AddCredit} />
+      <Route path="/add/compte-courant" component={AddCompteCourant} />
+      <Route path="/add/carte-pointage" component={AddCartePointage} />
       <Route path="/profile" component={Profile} />
     </Switch>
   );
