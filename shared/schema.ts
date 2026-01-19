@@ -63,24 +63,35 @@ export const cartePointages = pgTable("carte_pointages", {
   deletedAt: timestamp("deleted_at"),
 });
 
+// Helper for date validation
+const dateSchema = z.preprocess((arg) => {
+  if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
+}, z.date());
+
 export const insertAgentSchema = createInsertSchema(agents).omit({ id: true });
 export const insertCreditSchema = createInsertSchema(credits).omit({ 
   id: true, 
   isDeleted: true, 
   deletedAt: true,
   status: true,
+}).extend({
+  dateCreation: dateSchema,
 });
 export const insertCompteCourantSchema = createInsertSchema(compteCourants).omit({ 
   id: true, 
   isDeleted: true, 
   deletedAt: true,
   status: true,
+}).extend({
+  dateCreation: dateSchema,
 });
 export const insertCartePointageSchema = createInsertSchema(cartePointages).omit({ 
   id: true, 
   isDeleted: true, 
   deletedAt: true,
   status: true,
+}).extend({
+  dateCreation: dateSchema,
 });
 
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
