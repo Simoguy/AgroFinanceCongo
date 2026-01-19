@@ -15,6 +15,7 @@ import Add from "@/pages/Add";
 import AddCredit from "@/pages/AddCredit";
 import AddCompteCourant from "@/pages/AddCompteCourant";
 import AddCartePointage from "@/pages/AddCartePointage";
+import ClientDetails from "@/pages/ClientDetails";
 import Profile from "@/pages/Profile";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/add/credit" component={AddCredit} />
       <Route path="/add/compte-courant" component={AddCompteCourant} />
       <Route path="/add/carte-pointage" component={AddCartePointage} />
+      <Route path="/client/:type/:id" component={ClientDetails} />
       <Route path="/profile" component={Profile} />
     </Switch>
   );

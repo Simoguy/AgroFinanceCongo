@@ -83,7 +83,7 @@ export default function CreditPage() {
           credits?.map((credit) => (
             <button
               key={credit.id}
-              onClick={() => console.log(`Client ${credit.nom} clicked`)}
+              onClick={() => setLocation(`/client/credit/${credit.id}`)}
               data-testid={`card-client-${credit.id}`}
               className="w-full flex items-center gap-4 p-4 bg-card border border-card-border rounded-md hover-elevate active-elevate-2"
             >

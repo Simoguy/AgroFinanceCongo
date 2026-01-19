@@ -97,7 +97,7 @@ export default function EpargnePage() {
           clients?.map((client) => (
             <button
               key={client.id}
-              onClick={() => console.log(`Client ${client.nom} clicked`)}
+              onClick={() => setLocation(`/client/${activeTab === "carte" ? "carte-pointage" : "compte-courant"}/${client.id}`)}
               data-testid={`card-client-${client.id}`}
               className="w-full flex items-center gap-4 p-4 bg-card border border-card-border rounded-md hover-elevate active-elevate-2"
             >

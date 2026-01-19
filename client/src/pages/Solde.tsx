@@ -98,7 +98,10 @@ export default function SoldePage() {
           clients?.map((client) => (
             <button
               key={client.id}
-              onClick={() => console.log(`Client ${client.nom} clicked`)}
+              onClick={() => {
+                const type = activeTab === "credit" ? "credit" : (client.code.startsWith("CP") ? "carte-pointage" : "compte-courant");
+                setLocation(`/client/${type}/${client.id}`);
+              }}
               data-testid={`card-client-${client.id}`}
               className="w-full flex items-center gap-4 p-4 bg-card border border-card-border rounded-md hover-elevate active-elevate-2"
             >
