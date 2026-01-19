@@ -36,7 +36,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const credit = await storage.createCredit(validatedData);
       res.status(201).json(credit);
     } catch (error) {
-      res.status(400).json({ error: "Invalid credit data" });
+      console.error("Credit creation error:", error);
+      res.status(400).json({ error: "Invalid credit data", details: error });
     }
   });
 
@@ -94,7 +95,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const compte = await storage.createCompteCourant(validatedData);
       res.status(201).json(compte);
     } catch (error) {
-      res.status(400).json({ error: "Invalid compte courant data" });
+      console.error("Compte courant creation error:", error);
+      res.status(400).json({ error: "Invalid compte courant data", details: error });
     }
   });
 
@@ -152,7 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const carte = await storage.createCartePointage(validatedData);
       res.status(201).json(carte);
     } catch (error) {
-      res.status(400).json({ error: "Invalid carte pointage data" });
+      console.error("Carte pointage creation error:", error);
+      res.status(400).json({ error: "Invalid carte pointage data", details: error });
     }
   });
 

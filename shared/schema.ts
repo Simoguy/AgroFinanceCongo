@@ -1,9 +1,10 @@
 import { pgTable, text, varchar, timestamp, boolean, integer, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { sql } from "drizzle-orm";
 
 export const agents = pgTable("agents", {
-  id: varchar("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   agentId: text("agent_id").notNull().unique(),
   phone: text("phone").notNull(),
@@ -11,7 +12,7 @@ export const agents = pgTable("agents", {
 });
 
 export const credits = pgTable("credits", {
-  id: varchar("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
   nom: text("nom").notNull(),
   prenom: text("prenom").notNull(),
@@ -30,7 +31,7 @@ export const credits = pgTable("credits", {
 });
 
 export const compteCourants = pgTable("compte_courants", {
-  id: varchar("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
   nom: text("nom").notNull(),
   prenom: text("prenom").notNull(),
@@ -46,7 +47,7 @@ export const compteCourants = pgTable("compte_courants", {
 });
 
 export const cartePointages = pgTable("carte_pointages", {
-  id: varchar("id").primaryKey(),
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   code: text("code").notNull().unique(),
   nom: text("nom").notNull(),
   prenom: text("prenom").notNull(),
@@ -62,7 +63,7 @@ export const cartePointages = pgTable("carte_pointages", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const insertAgentSchema = createInsertSchema(agents);
+export const insertAgentSchema = createInsertSchema(agents).omit({ id: true });
 export const insertCreditSchema = createInsertSchema(credits).omit({ 
   id: true, 
   isDeleted: true, 

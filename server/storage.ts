@@ -14,7 +14,6 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
-import { randomUUID } from "crypto";
 
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
@@ -46,8 +45,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAgent(insertAgent: InsertAgent): Promise<Agent> {
-    const id = randomUUID();
-    const [agent] = await db.insert(agents).values({ ...insertAgent, id }).returning();
+    const [agent] = await db.insert(agents).values(insertAgent).returning();
     return agent;
   }
 
@@ -71,10 +69,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCredit(insertCredit: InsertCredit): Promise<Credit> {
-    const id = randomUUID();
     const [credit] = await db.insert(credits).values({ 
       ...insertCredit, 
-      id,
       status: "actif",
       isDeleted: false 
     }).returning();
@@ -115,10 +111,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompteCourant(insertCompte: InsertCompteCourant): Promise<CompteCourant> {
-    const id = randomUUID();
     const [compte] = await db.insert(compteCourants).values({ 
       ...insertCompte, 
-      id,
       status: "actif",
       isDeleted: false 
     }).returning();
@@ -159,10 +153,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCartePointage(insertCarte: InsertCartePointage): Promise<CartePointage> {
-    const id = randomUUID();
     const [carte] = await db.insert(cartePointages).values({ 
       ...insertCarte, 
-      id,
       status: "actif",
       isDeleted: false 
     }).returning();
