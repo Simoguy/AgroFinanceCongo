@@ -74,16 +74,20 @@ export default function AddCompteCourant() {
 
   const createCompteMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
+      const payload = {
+        ...data,
+        code: codeCompte,
+        dateCreation: new Date(data.dateCreation).toISOString(),
+      };
       const response = await fetch("/api/compte-courants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          code: codeCompte,
-          dateCreation: new Date(data.dateCreation),
-        }),
+        body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error("Failed to create compte courant");
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to create compte courant");
+      }
       return response.json();
     },
     onSuccess: () => {
