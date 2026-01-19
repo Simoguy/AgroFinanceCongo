@@ -7,7 +7,13 @@ import {
   type InsertCompteCourant,
   type CartePointage,
   type InsertCartePointage,
+  agents,
+  credits,
+  compteCourants,
+  cartePointages
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -33,185 +39,149 @@ export interface IStorage {
   deleteCartePointage(id: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private agents: Map<string, Agent>;
-  private credits: Map<string, Credit>;
-  private compteCourants: Map<string, CompteCourant>;
-  private cartePointages: Map<string, CartePointage>;
-
-  constructor() {
-    this.agents = new Map();
-    this.credits = new Map();
-    this.compteCourants = new Map();
-    this.cartePointages = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getAgent(id: string): Promise<Agent | undefined> {
-    return this.agents.get(id);
+    const [agent] = await db.select().from(agents).where(eq(agents.id, id));
+    return agent;
   }
 
   async createAgent(insertAgent: InsertAgent): Promise<Agent> {
     const id = randomUUID();
-    const agent: Agent = { ...insertAgent, id };
-    this.agents.set(id, agent);
+    const [agent] = await db.insert(agents).values({ ...insertAgent, id }).returning();
     return agent;
   }
 
   async getCredits(agentId?: string, status?: string): Promise<Credit[]> {
-    let credits = Array.from(this.credits.values()).filter(
-      (credit) => !credit.isDeleted
-    );
-    
-    if (agentId) {
-      credits = credits.filter((credit) => credit.agentId === agentId);
+    let query = db.select().from(credits).where(eq(credits.isDeleted, false));
+    if (agentId && status) {
+      query = db.select().from(credits).where(
+        and(eq(credits.agentId, agentId), eq(credits.status, status), eq(credits.isDeleted, false))
+      );
+    } else if (agentId) {
+      query = db.select().from(credits).where(and(eq(credits.agentId, agentId), eq(credits.isDeleted, false)));
+    } else if (status) {
+      query = db.select().from(credits).where(and(eq(credits.status, status), eq(credits.isDeleted, false)));
     }
-    
-    if (status) {
-      credits = credits.filter((credit) => credit.status === status);
-    }
-    
-    return credits;
+    return await query;
   }
 
   async getCredit(id: string): Promise<Credit | undefined> {
-    return this.credits.get(id);
+    const [credit] = await db.select().from(credits).where(eq(credits.id, id));
+    return credit;
   }
 
   async createCredit(insertCredit: InsertCredit): Promise<Credit> {
     const id = randomUUID();
-    const credit: Credit = {
-      ...insertCredit,
+    const [credit] = await db.insert(credits).values({ 
+      ...insertCredit, 
       id,
       status: "actif",
-      isDeleted: false,
-      deletedAt: null,
-    };
-    this.credits.set(id, credit);
+      isDeleted: false 
+    }).returning();
     return credit;
   }
 
   async updateCreditStatus(id: string, status: string): Promise<Credit | undefined> {
-    const credit = this.credits.get(id);
-    if (credit) {
-      credit.status = status;
-      this.credits.set(id, credit);
-      return credit;
-    }
-    return undefined;
+    const [credit] = await db.update(credits)
+      .set({ status })
+      .where(eq(credits.id, id))
+      .returning();
+    return credit;
   }
 
   async deleteCredit(id: string): Promise<void> {
-    const credit = this.credits.get(id);
-    if (credit) {
-      credit.isDeleted = true;
-      credit.deletedAt = new Date();
-      this.credits.set(id, credit);
-    }
+    await db.update(credits)
+      .set({ isDeleted: true, deletedAt: new Date() })
+      .where(eq(credits.id, id));
   }
 
   async getCompteCourants(agentId?: string, status?: string): Promise<CompteCourant[]> {
-    let comptes = Array.from(this.compteCourants.values()).filter(
-      (compte) => !compte.isDeleted
-    );
-    
-    if (agentId) {
-      comptes = comptes.filter((compte) => compte.agentId === agentId);
+    let query = db.select().from(compteCourants).where(eq(compteCourants.isDeleted, false));
+    if (agentId && status) {
+      query = db.select().from(compteCourants).where(
+        and(eq(compteCourants.agentId, agentId), eq(compteCourants.status, status), eq(compteCourants.isDeleted, false))
+      );
+    } else if (agentId) {
+      query = db.select().from(compteCourants).where(and(eq(compteCourants.agentId, agentId), eq(compteCourants.isDeleted, false)));
+    } else if (status) {
+      query = db.select().from(compteCourants).where(and(eq(compteCourants.status, status), eq(compteCourants.isDeleted, false)));
     }
-    
-    if (status) {
-      comptes = comptes.filter((compte) => compte.status === status);
-    }
-    
-    return comptes;
+    return await query;
   }
 
   async getCompteCourant(id: string): Promise<CompteCourant | undefined> {
-    return this.compteCourants.get(id);
+    const [compte] = await db.select().from(compteCourants).where(eq(compteCourants.id, id));
+    return compte;
   }
 
   async createCompteCourant(insertCompte: InsertCompteCourant): Promise<CompteCourant> {
     const id = randomUUID();
-    const compte: CompteCourant = {
-      ...insertCompte,
+    const [compte] = await db.insert(compteCourants).values({ 
+      ...insertCompte, 
       id,
       status: "actif",
-      isDeleted: false,
-      deletedAt: null,
-    };
-    this.compteCourants.set(id, compte);
+      isDeleted: false 
+    }).returning();
     return compte;
   }
 
   async updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined> {
-    const compte = this.compteCourants.get(id);
-    if (compte) {
-      compte.status = status;
-      this.compteCourants.set(id, compte);
-      return compte;
-    }
-    return undefined;
+    const [compte] = await db.update(compteCourants)
+      .set({ status })
+      .where(eq(compteCourants.id, id))
+      .returning();
+    return compte;
   }
 
   async deleteCompteCourant(id: string): Promise<void> {
-    const compte = this.compteCourants.get(id);
-    if (compte) {
-      compte.isDeleted = true;
-      compte.deletedAt = new Date();
-      this.compteCourants.set(id, compte);
-    }
+    await db.update(compteCourants)
+      .set({ isDeleted: true, deletedAt: new Date() })
+      .where(eq(compteCourants.id, id));
   }
 
   async getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]> {
-    let cartes = Array.from(this.cartePointages.values()).filter(
-      (carte) => !carte.isDeleted
-    );
-    
-    if (agentId) {
-      cartes = cartes.filter((carte) => carte.agentId === agentId);
+    let query = db.select().from(cartePointages).where(eq(cartePointages.isDeleted, false));
+    if (agentId && status) {
+      query = db.select().from(cartePointages).where(
+        and(eq(cartePointages.agentId, agentId), eq(cartePointages.status, status), eq(cartePointages.isDeleted, false))
+      );
+    } else if (agentId) {
+      query = db.select().from(cartePointages).where(and(eq(cartePointages.agentId, agentId), eq(cartePointages.isDeleted, false)));
+    } else if (status) {
+      query = db.select().from(cartePointages).where(and(eq(cartePointages.status, status), eq(cartePointages.isDeleted, false)));
     }
-    
-    if (status) {
-      cartes = cartes.filter((carte) => carte.status === status);
-    }
-    
-    return cartes;
+    return await query;
   }
 
   async getCartePointage(id: string): Promise<CartePointage | undefined> {
-    return this.cartePointages.get(id);
+    const [carte] = await db.select().from(cartePointages).where(eq(cartePointages.id, id));
+    return carte;
   }
 
   async createCartePointage(insertCarte: InsertCartePointage): Promise<CartePointage> {
     const id = randomUUID();
-    const carte: CartePointage = {
-      ...insertCarte,
+    const [carte] = await db.insert(cartePointages).values({ 
+      ...insertCarte, 
       id,
       status: "actif",
-      isDeleted: false,
-      deletedAt: null,
-    };
-    this.cartePointages.set(id, carte);
+      isDeleted: false 
+    }).returning();
     return carte;
   }
 
   async updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined> {
-    const carte = this.cartePointages.get(id);
-    if (carte) {
-      carte.status = status;
-      this.cartePointages.set(id, carte);
-      return carte;
-    }
-    return undefined;
+    const [carte] = await db.update(cartePointages)
+      .set({ status })
+      .where(eq(cartePointages.id, id))
+      .returning();
+    return carte;
   }
 
   async deleteCartePointage(id: string): Promise<void> {
-    const carte = this.cartePointages.get(id);
-    if (carte) {
-      carte.isDeleted = true;
-      carte.deletedAt = new Date();
-      this.cartePointages.set(id, carte);
-    }
+    await db.update(cartePointages)
+      .set({ isDeleted: true, deletedAt: new Date() })
+      .where(eq(cartePointages.id, id));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
