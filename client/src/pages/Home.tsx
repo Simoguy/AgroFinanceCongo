@@ -8,6 +8,7 @@ import {
   Trash2,
   Bell,
   RefreshCw,
+  Users,
 } from "lucide-react";
 import CategoryButton from "@/components/CategoryButton";
 import StatCard from "@/components/StatCard";
@@ -60,6 +61,7 @@ export default function Home() {
     { id: "contencieux", icon: AlertTriangle, label: "Contencieux", count: contentieuxCredits.length + contentieuxComptes.length + contentieuxCartes.length },
     { id: "performance", icon: TrendingUp, label: "Performance" },
     { id: "corbeille", icon: Trash2, label: "Corbeille", count: deletedCredits.length + deletedComptes.length + deletedCartes.length },
+    { id: "agent-portfolios", icon: Users, label: "Portefeuille Agent" },
   ];
 
   const totalClients = activeCredits.length + activeComptes.length + activeCartes.length;

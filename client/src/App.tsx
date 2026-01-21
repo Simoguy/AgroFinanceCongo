@@ -22,6 +22,9 @@ import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "@/lib/auth";
 
+import AgentPortfolios from "@/pages/AgentPortfolios";
+import AgentPortfolioDetail from "@/pages/AgentPortfolioDetail";
+
 function ProtectedRoute({ component: Component, path }: { component: any, path: string }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Redirect to="/login" />;
@@ -45,6 +48,8 @@ function Router() {
       <ProtectedRoute path="/add/carte-pointage" component={AddCartePointage} />
       <ProtectedRoute path="/client/:type/:id" component={ClientDetails} />
       <ProtectedRoute path="/admin/access" component={AdminAccess} />
+      <ProtectedRoute path="/agent-portfolios" component={AgentPortfolios} />
+      <ProtectedRoute path="/agent-portfolio/:agentId" component={AgentPortfolioDetail} />
       <ProtectedRoute path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
