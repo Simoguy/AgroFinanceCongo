@@ -9,6 +9,8 @@ export const agents = pgTable("agents", {
   agentId: text("agent_id").notNull().unique(),
   phone: text("phone").notNull(),
   region: text("region").notNull(),
+  role: text("role").notNull().default("agent"), // "admin" or "agent"
+  password: text("password").notNull().default("password123"),
 });
 
 export const credits = pgTable("credits", {

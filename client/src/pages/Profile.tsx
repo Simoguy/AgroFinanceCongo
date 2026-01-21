@@ -1,16 +1,24 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 export default function Profile() {
   const [isDark, setIsDark] = useState(false);
+  const [, setLocation] = useLocation();
+
+  // Mock for current user - in a real app this comes from auth context
+  const currentUser = {
+    name: "Francisco MOUANGA AGR",
+    role: "admin",
+    agentId: "ADM-2024-001"
+  };
 
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle("dark");
-    console.log("Theme toggled:", !isDark ? "dark" : "light");
   };
 
   return (
@@ -23,12 +31,29 @@ export default function Profile() {
         <div className="flex flex-col items-center pt-6 pb-4">
           <Avatar className="h-24 w-24 mb-4">
             <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
-              LM
+              FM
             </AvatarFallback>
           </Avatar>
-          <h2 className="text-2xl font-bold text-foreground">Lesly Muamba</h2>
-          <p className="text-sm text-muted-foreground">AG-2024-001</p>
+          <h2 className="text-2xl font-bold text-foreground">{currentUser.name}</h2>
+          <p className="text-sm text-muted-foreground">{currentUser.agentId}</p>
         </div>
+
+        {currentUser.role === "admin" && (
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              Administration
+            </h3>
+            <Button
+              className="w-full h-12 justify-start gap-3 bg-primary/10 text-primary hover:bg-primary/20 border-none"
+              onClick={() => setLocation("/admin/access")}
+              data-testid="button-manage-access"
+            >
+              <Users className="w-5 h-5" />
+              <span>Gestion accès</span>
+            </Button>
+          </section>
+        )}
 
         <section className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">
