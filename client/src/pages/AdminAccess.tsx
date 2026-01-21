@@ -89,7 +89,8 @@ export default function AdminAccess() {
                 <Label htmlFor="admin-name">Entrez votre nom complet</Label>
                 <Input
                   id="admin-name"
-                  placeholder="Francisco MOUANGA AGR"
+                  type="password"
+                  placeholder="••••••••••••••••"
                   value={adminName}
                   onChange={(e) => setAdminName(e.target.value)}
                 />
