@@ -22,7 +22,6 @@ import { useAuth } from "@/lib/auth";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
   const [syncQueueSize, setSyncQueueSize] = useState(0);
 
   useEffect(() => {
@@ -33,36 +32,47 @@ export default function Home() {
     const interval = setInterval(updateQueueSize, 5000);
     return () => clearInterval(interval);
   }, []);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const { data: credits = [] } = useQuery<Credit[]>({ queryKey: ["/api/credits"] });
   const { data: comptes = [] } = useQuery<CompteCourant[]>({ queryKey: ["/api/compte-courants"] });
   const { data: cartes = [] } = useQuery<CartePointage[]>({ queryKey: ["/api/carte-pointages"] });
 
-  const activeCredits = credits.filter(c => c.status === "actif");
-  const activeComptes = comptes.filter(c => c.status === "actif");
-  const activeCartes = cartes.filter(c => c.status === "actif");
+  // Filter based on role
+  const filteredCredits = isAdmin ? credits : credits.filter(c => c.agentId === user?.agentId);
+  const filteredComptes = isAdmin ? comptes : comptes.filter(c => c.agentId === user?.agentId);
+  const filteredCartes = isAdmin ? cartes : cartes.filter(c => c.agentId === user?.agentId);
+
+  const activeCredits = filteredCredits.filter(c => c.status === "actif");
+  const activeComptes = filteredComptes.filter(c => c.status === "actif");
+  const activeCartes = filteredCartes.filter(c => c.status === "actif");
   
-  const soldeCredits = credits.filter(c => c.status === "solde");
-  const soldeComptes = comptes.filter(c => c.status === "solde");
-  const soldeCartes = cartes.filter(c => c.status === "solde");
+  const soldeCredits = filteredCredits.filter(c => c.status === "solde");
+  const soldeComptes = filteredComptes.filter(c => c.status === "solde");
+  const soldeCartes = filteredCartes.filter(c => c.status === "solde");
 
-  const contentieuxCredits = credits.filter(c => c.status === "contentieux");
-  const contentieuxComptes = comptes.filter(c => c.status === "contentieux");
-  const contentieuxCartes = cartes.filter(c => c.status === "contentieux");
+  const contentieuxCredits = filteredCredits.filter(c => c.status === "contentieux");
+  const contentieuxComptes = filteredComptes.filter(c => c.status === "contentieux");
+  const contentieuxCartes = filteredCartes.filter(c => c.status === "contentieux");
 
-  const deletedCredits = credits.filter(c => c.isDeleted);
-  const deletedComptes = comptes.filter(c => c.isDeleted);
-  const deletedCartes = cartes.filter(c => c.isDeleted);
+  const deletedCredits = filteredCredits.filter(c => c.isDeleted);
+  const deletedComptes = filteredComptes.filter(c => c.isDeleted);
+  const deletedCartes = filteredCartes.filter(c => c.isDeleted);
 
   const categories = [
-    { id: "credit", icon: CreditCard, label: "Crédit", count: activeCredits.length },
-    { id: "epargne", icon: Wallet, label: "Épargne", count: activeComptes.length + activeCartes.length },
+    { id: "credit", icon: CreditCard, label: "Mon Portefeuille", count: activeCredits.length + activeComptes.length + activeCartes.length },
     { id: "solde", icon: CheckCircle2, label: "Soldé", count: soldeCredits.length + soldeComptes.length + soldeCartes.length },
     { id: "contencieux", icon: AlertTriangle, label: "Contencieux", count: contentieuxCredits.length + contentieuxComptes.length + contentieuxCartes.length },
-    { id: "performance", icon: TrendingUp, label: "Performance" },
-    { id: "corbeille", icon: Trash2, label: "Corbeille", count: deletedCredits.length + deletedComptes.length + deletedCartes.length },
-    { id: "agent-portfolios", icon: Users, label: "Portefeuille Agent" },
   ];
+
+  if (isAdmin) {
+    categories.push(
+      { id: "performance", icon: TrendingUp, label: "Performance" },
+      { id: "corbeille", icon: Trash2, label: "Corbeille", count: deletedCredits.length + deletedComptes.length + deletedCartes.length },
+      { id: "agent-portfolios", icon: Users, label: "Portefeuille Agent" }
+    );
+  }
 
   const totalClients = activeCredits.length + activeComptes.length + activeCartes.length;
 
