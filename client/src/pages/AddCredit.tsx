@@ -48,8 +48,11 @@ const zones = [
   "Loandjili",
 ];
 
+import { useAuth } from "@/lib/auth";
+
 export default function AddCredit() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [codeCompte, setCodeCompte] = useState("");
 
@@ -76,7 +79,7 @@ export default function AddCredit() {
       garantie: "",
       echeance: 0,
       code: "",
-      agentId: "default-agent",
+      agentId: user?.agentId || "default-agent",
     },
   });
 

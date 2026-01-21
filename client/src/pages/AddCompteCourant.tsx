@@ -46,8 +46,11 @@ const zones = [
   "Loandjili",
 ];
 
+import { useAuth } from "@/lib/auth";
+
 export default function AddCompteCourant() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [codeCompte, setCodeCompte] = useState("");
 
@@ -71,7 +74,7 @@ export default function AddCompteCourant() {
       zone: "",
       dateCreation: "",
       code: "",
-      agentId: "default-agent",
+      agentId: user?.agentId || "default-agent",
     },
   });
 

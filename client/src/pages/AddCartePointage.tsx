@@ -47,8 +47,11 @@ const zones = [
   "Loandjili",
 ];
 
+import { useAuth } from "@/lib/auth";
+
 export default function AddCartePointage() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [codeCompte, setCodeCompte] = useState("");
 
@@ -73,7 +76,7 @@ export default function AddCartePointage() {
       montant: "",
       dateCreation: "",
       code: "",
-      agentId: "default-agent",
+      agentId: user?.agentId || "default-agent",
     },
   });
 
