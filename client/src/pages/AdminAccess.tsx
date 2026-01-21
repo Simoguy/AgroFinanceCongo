@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, UserPlus, Shield, User, LogIn } from "lucide-react";
+import { ArrowLeft, UserPlus, Shield, User, LogIn, Trash2, Key } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,10 +23,11 @@ export default function AdminAccess() {
   const [adminName, setAdminName] = useState("");
   
   const [agents, setAgents] = useState([
-    { id: 1, name: "Lesly Muamba", agentId: "AG-2024-001", role: "agent" },
+    { id: 1, name: "Lesly Muamba", agentId: "AG-2024-001", role: "agent", code: "1234" },
   ]);
 
   const [newName, setNewName] = useState("");
+  const [newCode, setNewCode] = useState("");
   const [newRole, setNewRole] = useState<"agent" | "admin_secondaire">("agent");
   const MAX_USERS = 5;
 
@@ -58,18 +59,37 @@ export default function AdminAccess() {
       return;
     }
 
+    if (!newCode || newCode.length < 4) {
+      toast({
+        title: "Erreur",
+        description: "Le code doit contenir au moins 4 caractères.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newUser = {
-      id: agents.length + 1,
+      id: Date.now(),
       name: newName,
+      code: newCode,
       agentId: newRole === "admin_secondaire" ? `ADM-SEC-00${agents.length + 1}` : `AG-2024-00${agents.length + 1}`,
       role: newRole === "admin_secondaire" ? "Administrateur Secondaire" : "agent"
     };
 
     setAgents([...agents, newUser]);
     setNewName("");
+    setNewCode("");
     toast({
       title: "Utilisateur créé",
       description: `${newRole === "admin_secondaire" ? "L'administrateur" : "L'agent"} ${newName} a été ajouté.`,
+    });
+  };
+
+  const handleDeleteUser = (id: number) => {
+    setAgents(agents.filter(a => a.id !== id));
+    toast({
+      title: "Utilisateur supprimé",
+      description: "L'accès a été révoqué avec succès.",
     });
   };
 
@@ -149,6 +169,21 @@ export default function AdminAccess() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="user-code">Code secret (pour connexion)</Label>
+                <div className="relative">
+                  <Input
+                    id="user-code"
+                    type="password"
+                    placeholder="••••"
+                    value={newCode}
+                    onChange={(e) => setNewCode(e.target.value)}
+                    disabled={agents.length >= MAX_USERS}
+                    className="pl-10"
+                  />
+                  <Key className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label>Type de compte</Label>
                 <Select 
                   value={newRole} 
@@ -167,7 +202,7 @@ export default function AdminAccess() {
               <Button 
                 type="submit" 
                 className="w-full h-12"
-                disabled={!newName || agents.length >= MAX_USERS}
+                disabled={!newName || !newCode || agents.length >= MAX_USERS}
               >
                 Créer l'utilisateur
               </Button>
@@ -190,10 +225,20 @@ export default function AdminAccess() {
                     </div>
                     <div>
                       <p className="font-semibold">{agent.name}</p>
-                      <p className="text-xs text-muted-foreground">{agent.agentId}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">{agent.agentId}</p>
+                        <Badge variant="outline" className="text-[10px] h-4">{agent.role}</Badge>
+                      </div>
                     </div>
                   </div>
-                  <Badge variant="outline">{agent.role}</Badge>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDeleteUser(agent.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </CardContent>
               </Card>
             ))}
