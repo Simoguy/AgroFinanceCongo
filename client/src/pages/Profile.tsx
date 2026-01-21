@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { LogOut, Moon, Sun, ShieldCheck, Users } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -35,7 +36,12 @@ export default function Profile() {
             </AvatarFallback>
           </Avatar>
           <h2 className="text-2xl font-bold text-foreground">{currentUser.name}</h2>
-          <p className="text-sm text-muted-foreground">{currentUser.agentId}</p>
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">
+              ADMINISTRATEUR PRINCIPAL
+            </Badge>
+            <p className="text-xs text-muted-foreground mt-1">{currentUser.agentId}</p>
+          </div>
         </div>
 
         {currentUser.role === "admin" && (
@@ -54,45 +60,6 @@ export default function Profile() {
             </Button>
           </section>
         )}
-
-        <section className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">
-            Informations
-          </h3>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Téléphone
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base text-card-foreground">+242 06 123 4567</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Région
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base text-card-foreground">Congo Brazzaville (Pointe-Noire)</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Date d'inscription
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base text-card-foreground">15 janvier 2024</p>
-            </CardContent>
-          </Card>
-        </section>
 
         <section className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Paramètres</h3>
