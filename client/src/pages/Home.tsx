@@ -7,15 +7,28 @@ import {
   TrendingUp,
   Trash2,
   Bell,
+  RefreshCw,
 } from "lucide-react";
 import CategoryButton from "@/components/CategoryButton";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { Credit, CompteCourant, CartePointage } from "@shared/schema";
+import { useState, useEffect } from "react";
+import { SyncManager } from "@/lib/syncManager";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const [syncQueueSize, setSyncQueueSize] = useState(0);
+
+  useEffect(() => {
+    const updateQueueSize = () => {
+      setSyncQueueSize(SyncManager.getQueue().length);
+    };
+    updateQueueSize();
+    const interval = setInterval(updateQueueSize, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: credits = [] } = useQuery<Credit[]>({ queryKey: ["/api/credits"] });
   const { data: comptes = [] } = useQuery<CompteCourant[]>({ queryKey: ["/api/compte-courants"] });
@@ -58,9 +71,22 @@ export default function Home() {
             </h1>
             <p className="text-sm text-muted-foreground">Agent ID: AG-2024-001</p>
           </div>
-          <Button size="icon" variant="ghost" data-testid="button-notifications">
-            <Bell className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {syncQueueSize > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-2 animate-pulse text-orange-500 border-orange-200 bg-orange-50"
+                onClick={() => SyncManager.processQueue()}
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>{syncQueueSize} en attente</span>
+              </Button>
+            )}
+            <Button size="icon" variant="ghost" data-testid="button-notifications">
+              <Bell className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </header>
 

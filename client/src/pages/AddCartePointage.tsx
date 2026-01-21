@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { z } from "zod";
+import { SyncManager } from "@/lib/syncManager";
 
 const formSchema = insertCartePointageSchema.extend({
   dateCreation: z.string().min(1, "La date de création est requise"),
@@ -84,6 +85,15 @@ export default function AddCartePointage() {
         montant: data.montant.toString(),
         dateCreation: new Date(data.dateCreation).toISOString(),
       };
+
+      if (!navigator.onLine) {
+        SyncManager.addToQueue({
+          type: "CREATE_CARTE_POINTAGE",
+          payload
+        });
+        return { success: true, offline: true };
+      }
+
       console.log("Sending payload:", payload);
       const response = await fetch("/api/carte-pointages", {
         method: "POST",
@@ -96,11 +106,11 @@ export default function AddCartePointage() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
       toast({
         title: "Succès",
-        description: "Carte de pointage créée avec succès",
+        description: data.offline ? "Enregistré localement (en attente de connexion)" : "Carte de pointage créée avec succès",
       });
       setLocation("/");
     },

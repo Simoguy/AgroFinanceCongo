@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { z } from "zod";
+import { SyncManager } from "@/lib/syncManager";
 
 const formSchema = insertCompteCourantSchema.extend({
   dateCreation: z.string().min(1, "La date de création est requise"),
@@ -81,6 +82,15 @@ export default function AddCompteCourant() {
         code: codeCompte,
         dateCreation: new Date(data.dateCreation).toISOString(),
       };
+
+      if (!navigator.onLine) {
+        SyncManager.addToQueue({
+          type: "CREATE_COMPTE_COURANT",
+          payload
+        });
+        return { success: true, offline: true };
+      }
+
       const response = await fetch("/api/compte-courants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,11 +102,11 @@ export default function AddCompteCourant() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
       toast({
         title: "Succès",
-        description: "Compte courant créé avec succès",
+        description: data.offline ? "Enregistré localement (en attente de connexion)" : "Compte courant créé avec succès",
       });
       setLocation("/");
     },

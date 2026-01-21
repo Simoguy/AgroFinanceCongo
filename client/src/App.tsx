@@ -38,7 +38,20 @@ function Router() {
   );
 }
 
+import { useEffect } from "react";
+import { SyncManager } from "@/lib/syncManager";
+
 function App() {
+  useEffect(() => {
+    const handleOnline = () => {
+      SyncManager.processQueue();
+    };
+    window.addEventListener("online", handleOnline);
+    // Initial check
+    if (navigator.onLine) handleOnline();
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
   return (
     <PersistQueryClientProvider
       client={queryClient}

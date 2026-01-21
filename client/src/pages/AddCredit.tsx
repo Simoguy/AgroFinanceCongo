@@ -25,6 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { z } from "zod";
+import { SyncManager } from "@/lib/syncManager";
 
 const formSchema = insertCreditSchema.extend({
   nombreCompte: z.coerce.number().min(1, "Le nombre de compte est requis"),
@@ -86,6 +87,15 @@ export default function AddCredit() {
         code: codeCompte,
         dateCreation: new Date(data.dateCreation).toISOString(),
       };
+
+      if (!navigator.onLine) {
+        SyncManager.addToQueue({
+          type: "CREATE_CREDIT",
+          payload
+        });
+        return { success: true, offline: true };
+      }
+
       const response = await fetch("/api/credits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -97,11 +107,11 @@ export default function AddCredit() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
       toast({
         title: "Succès",
-        description: "Crédit créé avec succès",
+        description: data.offline ? "Enregistré localement (en attente de connexion)" : "Crédit créé avec succès",
       });
       setLocation("/");
     },
