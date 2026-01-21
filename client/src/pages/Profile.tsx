@@ -8,12 +8,15 @@ import { useLocation } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
+import { useAuth } from "@/lib/auth";
+
 export default function Profile() {
   const [isDark, setIsDark] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [, setLocation] = useLocation();
+  const { user, logout } = useAuth();
 
-  const currentUser = {
+  const currentUser = user || {
     name: "Direction AGR",
     role: "admin",
     agentId: "ADM-MAIN"
@@ -97,7 +100,7 @@ export default function Profile() {
             variant="destructive"
             className="w-full h-12 justify-start gap-3"
             data-testid="button-logout"
-            onClick={() => console.log("Logout clicked")}
+            onClick={logout}
           >
             <LogOut className="w-5 h-5" />
             <span>Se déconnecter</span>

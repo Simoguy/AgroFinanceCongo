@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, UserPlus, Shield, User, LogIn, Trash2, Key } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { useAuth } from "@/lib/auth";
+
 export default function AdminAccess() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { login } = useAuth();
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminName, setAdminName] = useState("");
   
-  const [agents, setAgents] = useState([
-    { id: 1, name: "Lesly Muamba", agentId: "AG-2024-001", role: "agent", code: "1234" },
-  ]);
+  const [agents, setAgents] = useState(() => {
+    const saved = localStorage.getItem("agro_finance_agents");
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: "Lesly Muamba", agentId: "AG-2024-001", role: "agent", code: "1234" },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("agro_finance_agents", JSON.stringify(agents));
+  }, [agents]);
 
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
@@ -33,11 +43,11 @@ export default function AdminAccess() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminName.toLowerCase() === "francisco mouanga agr") {
+    if (login(adminName)) {
       setIsAuthenticated(true);
       toast({
-        title: "Connexion réussie",
-        description: `Bienvenue, ${adminName}`,
+        title: "Accès autorisé",
+        description: "Gestion des accès déverrouillée.",
       });
     } else {
       toast({
@@ -86,7 +96,7 @@ export default function AdminAccess() {
   };
 
   const handleDeleteUser = (id: number) => {
-    setAgents(agents.filter(a => a.id !== id));
+    setAgents((prevAgents: any[]) => prevAgents.filter((a: any) => a.id !== id));
     toast({
       title: "Utilisateur supprimé",
       description: "L'accès a été révoqué avec succès.",
@@ -216,7 +226,7 @@ export default function AdminAccess() {
             Liste des accès
           </h3>
           <div className="grid gap-3">
-            {agents.map((agent) => (
+            {agents.map((agent: any) => (
               <Card key={agent.id}>
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">

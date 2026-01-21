@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient, persister } from "./lib/queryClient";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,25 +18,34 @@ import AddCartePointage from "@/pages/AddCartePointage";
 import ClientDetails from "@/pages/ClientDetails";
 import AdminAccess from "@/pages/AdminAccess";
 import Profile from "@/pages/Profile";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
+import { AuthProvider, useAuth } from "@/lib/auth";
+
+function ProtectedRoute({ component: Component, path }: { component: any, path: string }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Redirect to="/login" />;
+  return <Route path={path} component={Component} />;
+}
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/credit" component={Credit} />
-      <Route path="/epargne" component={Epargne} />
-      <Route path="/solde" component={Solde} />
-      <Route path="/contencieux" component={Contencieux} />
-      <Route path="/performance" component={Performance} />
-      <Route path="/corbeille" component={Corbeille} />
-      <Route path="/add" component={Add} />
-      <Route path="/add/credit" component={AddCredit} />
-      <Route path="/add/compte-courant" component={AddCompteCourant} />
-      <Route path="/add/carte-pointage" component={AddCartePointage} />
-      <Route path="/client/:type/:id" component={ClientDetails} />
-      <Route path="/admin/access" component={AdminAccess} />
-      <Route path="/profile" component={Profile} />
+      <Route path="/login" component={Login} />
+      <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/credit" component={Credit} />
+      <ProtectedRoute path="/epargne" component={Epargne} />
+      <ProtectedRoute path="/solde" component={Solde} />
+      <ProtectedRoute path="/contencieux" component={Contencieux} />
+      <ProtectedRoute path="/performance" component={Performance} />
+      <ProtectedRoute path="/corbeille" component={Corbeille} />
+      <ProtectedRoute path="/add" component={Add} />
+      <ProtectedRoute path="/add/credit" component={AddCredit} />
+      <ProtectedRoute path="/add/compte-courant" component={AddCompteCourant} />
+      <ProtectedRoute path="/add/carte-pointage" component={AddCartePointage} />
+      <ProtectedRoute path="/client/:type/:id" component={ClientDetails} />
+      <ProtectedRoute path="/admin/access" component={AdminAccess} />
+      <ProtectedRoute path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -61,15 +70,23 @@ function App() {
       client={queryClient}
       persistOptions={{ persister }}
     >
-      <TooltipProvider>
-        <div className="relative">
-          <Router />
-          <BottomNav />
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="relative">
+            <Router />
+            <BottomNavWrapper />
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </PersistQueryClientProvider>
   );
+}
+
+function BottomNavWrapper() {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
+  return <BottomNav />;
 }
 
 export default App;

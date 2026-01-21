@@ -17,8 +17,11 @@ import { Credit, CompteCourant, CartePointage } from "@shared/schema";
 import { useState, useEffect } from "react";
 import { SyncManager } from "@/lib/syncManager";
 
+import { useAuth } from "@/lib/auth";
+
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const [syncQueueSize, setSyncQueueSize] = useState(0);
 
   useEffect(() => {
@@ -67,9 +70,9 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-card-foreground">
-              Bonjour, Lesly
+              Bonjour, {user?.name || "Agent"}
             </h1>
-            <p className="text-sm text-muted-foreground">Agent ID: AG-2024-001</p>
+            <p className="text-sm text-muted-foreground">Agent ID: {user?.agentId || "---"}</p>
           </div>
           <div className="flex items-center gap-2">
             {syncQueueSize > 0 && (
