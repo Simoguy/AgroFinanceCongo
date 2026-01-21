@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, UserPlus, Shield, User } from "lucide-react";
+import { ArrowLeft, UserPlus, Shield, User, LogIn } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,44 +7,109 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminAccess() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
-  // Mock current agents - in real app would use react-query
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminName, setAdminName] = useState("");
+  
   const [agents, setAgents] = useState([
     { id: 1, name: "Lesly Muamba", agentId: "AG-2024-001", role: "agent" },
   ]);
 
   const [newName, setNewName] = useState("");
-  const MAX_AGENTS = 5;
+  const [newRole, setNewRole] = useState<"agent" | "admin_secondaire">("agent");
+  const MAX_USERS = 5;
 
-  const handleCreateAgent = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (agents.length >= MAX_AGENTS) {
+    if (adminName.toLowerCase() === "francisco mouanga") {
+      setIsAuthenticated(true);
+      toast({
+        title: "Connexion réussie",
+        description: `Bienvenue, ${adminName}`,
+      });
+    } else {
+      toast({
+        title: "Erreur",
+        description: "Nom administrateur incorrect.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (agents.length >= MAX_USERS) {
       toast({
         title: "Limite atteinte",
-        description: `Vous ne pouvez pas créer plus de ${MAX_AGENTS} agents.`,
+        description: `Vous ne pouvez pas créer plus de ${MAX_USERS} utilisateurs.`,
         variant: "destructive",
       });
       return;
     }
 
-    const newAgent = {
+    const newUser = {
       id: agents.length + 1,
       name: newName,
-      agentId: `AG-2024-00${agents.length + 1}`,
-      role: "agent"
+      agentId: newRole === "admin_secondaire" ? `ADM-SEC-00${agents.length + 1}` : `AG-2024-00${agents.length + 1}`,
+      role: newRole === "admin_secondaire" ? "Administrateur Secondaire" : "agent"
     };
 
-    setAgents([...agents, newAgent]);
+    setAgents([...agents, newUser]);
     setNewName("");
     toast({
-      title: "Agent créé",
-      description: `L'agent ${newName} a été ajouté avec succès.`,
+      title: "Utilisateur créé",
+      description: `${newRole === "admin_secondaire" ? "L'administrateur" : "L'agent"} ${newName} a été ajouté.`,
     });
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center flex flex-col items-center gap-2">
+              <LogIn className="w-8 h-8 text-primary" />
+              Connexion Administrative
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin-name">Entrez votre nom complet</Label>
+                <Input
+                  id="admin-name"
+                  placeholder="Francisco MOUANGA"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full h-12">
+                Se connecter
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="w-full" 
+                onClick={() => setLocation("/profile")}
+              >
+                Retour
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-20 bg-background">
@@ -67,27 +132,43 @@ export default function AdminAccess() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-primary" />
-              Nouvel Agent ({agents.length}/{MAX_AGENTS})
+              Nouvel Utilisateur ({agents.length}/{MAX_USERS})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateAgent} className="space-y-4">
+            <form onSubmit={handleCreateUser} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="agent-name">Nom complet de l'agent</Label>
+                <Label htmlFor="user-name">Nom complet</Label>
                 <Input
-                  id="agent-name"
+                  id="user-name"
                   placeholder="Ex: Jean Dupont"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  disabled={agents.length >= MAX_AGENTS}
+                  disabled={agents.length >= MAX_USERS}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Type de compte</Label>
+                <Select 
+                  value={newRole} 
+                  onValueChange={(v: any) => setNewRole(v)}
+                  disabled={agents.length >= MAX_USERS}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agent">Agent</SelectItem>
+                    <SelectItem value="admin_secondaire">Administrateur Secondaire</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button 
                 type="submit" 
-                className="w-full"
-                disabled={!newName || agents.length >= MAX_AGENTS}
+                className="w-full h-12"
+                disabled={!newName || agents.length >= MAX_USERS}
               >
-                Créer l'agent
+                Créer l'utilisateur
               </Button>
             </form>
           </CardContent>
@@ -96,7 +177,7 @@ export default function AdminAccess() {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
-            Liste des agents
+            Liste des accès
           </h3>
           <div className="grid gap-3">
             {agents.map((agent) => (

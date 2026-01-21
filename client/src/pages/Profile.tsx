@@ -2,19 +2,21 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Moon, Sun, ShieldCheck, Users } from "lucide-react";
+import { LogOut, Moon, Sun, ShieldCheck, Users, Bell, BellOff } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function Profile() {
   const [isDark, setIsDark] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [, setLocation] = useLocation();
 
-  // Mock for current user - in a real app this comes from auth context
   const currentUser = {
-    name: "Francisco MOUANGA AGR",
+    name: "Direction AGR",
     role: "admin",
-    agentId: "ADM-2024-001"
+    agentId: "ADM-MAIN"
   };
 
   const toggleTheme = () => {
@@ -32,7 +34,7 @@ export default function Profile() {
         <div className="flex flex-col items-center pt-6 pb-4">
           <Avatar className="h-24 w-24 mb-4">
             <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
-              FM
+              AGR
             </AvatarFallback>
           </Avatar>
           <h2 className="text-2xl font-bold text-foreground">{currentUser.name}</h2>
@@ -40,7 +42,6 @@ export default function Profile() {
             <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">
               ADMINISTRATEUR PRINCIPAL
             </Badge>
-            <p className="text-xs text-muted-foreground mt-1">{currentUser.agentId}</p>
           </div>
         </div>
 
@@ -63,6 +64,20 @@ export default function Profile() {
 
         <section className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Paramètres</h3>
+
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {notificationsEnabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
+                <Label htmlFor="notifications" className="cursor-pointer">Notifications</Label>
+              </div>
+              <Switch
+                id="notifications"
+                checked={notificationsEnabled}
+                onCheckedChange={setNotificationsEnabled}
+              />
+            </CardContent>
+          </Card>
 
           <Button
             variant="outline"
