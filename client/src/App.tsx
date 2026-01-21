@@ -18,6 +18,7 @@ import AddCartePointage from "@/pages/AddCartePointage";
 import ClientDetails from "@/pages/ClientDetails";
 import AdminAccess from "@/pages/AdminAccess";
 import Profile from "@/pages/Profile";
+import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
