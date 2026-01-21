@@ -13,14 +13,14 @@ export default function Corbeille() {
     {
       id: "1",
       name: "François Kabila",
-      phone: "+243 890 111 222",
+      phone: "+242 06 111 2222",
       amount: "0 FC",
       status: "settled" as const,
     },
     {
       id: "2",
       name: "Elisabeth Nzuzi",
-      phone: "+243 876 333 444",
+      phone: "+242 06 333 4444",
       amount: "0 FC",
       status: "settled" as const,
     },

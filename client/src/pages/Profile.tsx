@@ -42,7 +42,7 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-card-foreground">+243 812 345 678</p>
+              <p className="text-base text-card-foreground">+242 06 123 4567</p>
             </CardContent>
           </Card>
 
@@ -53,7 +53,7 @@ export default function Profile() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-card-foreground">Kinshasa</p>
+              <p className="text-base text-card-foreground">Congo Brazzaville (Pointe-Noire)</p>
             </CardContent>
           </Card>
 

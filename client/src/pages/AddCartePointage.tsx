@@ -33,7 +33,6 @@ const formSchema = insertCartePointageSchema.extend({
 
 const zones = [
   "Marché Total",
-  "Marché Plateau des 15 ans",
   "Marché Tchimbamba",
   "Marché Tié-Tié",
   "Marché Mvoumvou",
@@ -42,6 +41,9 @@ const zones = [
   "Centre-ville",
   "Lumumba",
   "Mongo Mpoukou",
+  "Moukondo",
+  "Ngoyo",
+  "Loandjili",
 ];
 
 export default function AddCartePointage() {
@@ -182,7 +184,7 @@ export default function AddCartePointage() {
                   <FormLabel>Téléphone</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="+243 812 345 678"
+                      placeholder="+242 06 123 4567"
                       className="h-12"
                       data-testid="input-telephone"
                       {...field}
