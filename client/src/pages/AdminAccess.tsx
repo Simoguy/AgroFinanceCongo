@@ -32,7 +32,7 @@ export default function AdminAccess() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminName.toLowerCase() === "francisco mouanga") {
+    if (adminName.toLowerCase() === "francisco mouanga agr") {
       setIsAuthenticated(true);
       toast({
         title: "Connexion réussie",
@@ -89,7 +89,7 @@ export default function AdminAccess() {
                 <Label htmlFor="admin-name">Entrez votre nom complet</Label>
                 <Input
                   id="admin-name"
-                  placeholder="Francisco MOUANGA"
+                  placeholder="Francisco MOUANGA AGR"
                   value={adminName}
                   onChange={(e) => setAdminName(e.target.value)}
                 />
