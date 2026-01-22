@@ -78,13 +78,31 @@ export const cartePointages = pgTable("carte_pointages", {
   activite: text("activite").notNull(),
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
-  montant: numeric("montant").notNull(),
+  montant: numeric("montant").notNull(), // individual amount (limite credit)
+  versements: numeric("versements").notNull().default("0"),
+  nombreVersements: integer("nombre_versements").notNull().default(0),
   dateCreation: timestamp("date_creation").notNull(),
   status: text("status").notNull().default("actif"),
   agentId: varchar("agent_id").notNull(),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at"),
 });
+
+export const transactionsCarte = pgTable("transactions_carte", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  carteId: varchar("carte_id").notNull(),
+  montant: numeric("montant").notNull(),
+  date: timestamp("date").notNull().default(sql`now()`),
+  agentId: varchar("agent_id").notNull(),
+});
+
+export const insertTransactionCarteSchema = createInsertSchema(transactionsCarte).omit({ 
+  id: true,
+  date: true 
+});
+
+export type TransactionCarte = typeof transactionsCarte.$inferSelect;
+export type InsertTransactionCarte = z.infer<typeof insertTransactionCarteSchema>;
 
 // Helper for date validation
 const dateSchema = z.preprocess((arg) => {

@@ -172,6 +172,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/carte-pointages/:id/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsCarte(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post("/api/carte-pointages/:id/transactions", async (req, res) => {
+    try {
+      const transaction = await storage.createTransactionCarte(req.body);
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create transaction" });
+    }
+  });
+
   app.delete("/api/carte-pointages/:id", async (req, res) => {
     try {
       await storage.deleteCartePointage(req.params.id);

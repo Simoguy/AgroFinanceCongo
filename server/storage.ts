@@ -7,13 +7,16 @@ import {
   type InsertCompteCourant,
   type CartePointage,
   type InsertCartePointage,
+  type TransactionCarte,
+  type InsertTransactionCarte,
   type Remboursement,
   type InsertRemboursement,
   agents,
   credits,
   compteCourants,
   cartePointages,
-  remboursements
+  remboursements,
+  transactionsCarte
 } from "@shared/schema";
 import { db } from "./db.js";
 import { eq, and } from "drizzle-orm";
@@ -39,6 +42,9 @@ export interface IStorage {
   createCartePointage(carte: InsertCartePointage): Promise<CartePointage>;
   updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined>;
   deleteCartePointage(id: string): Promise<void>;
+  
+  getTransactionsCarte(carteId: string): Promise<TransactionCarte[]>;
+  createTransactionCarte(transaction: InsertTransactionCarte): Promise<TransactionCarte>;
   
   getRemboursements(creditId: string): Promise<Remboursement[]>;
   createRemboursement(remboursement: InsertRemboursement): Promise<Remboursement>;
@@ -183,6 +189,26 @@ export class DatabaseStorage implements IStorage {
 
   async getRemboursements(creditId: string): Promise<Remboursement[]> {
     return await db.select().from(remboursements).where(eq(remboursements.creditId, creditId));
+  }
+
+  async getTransactionsCarte(carteId: string): Promise<TransactionCarte[]> {
+    return await db.select().from(transactionsCarte).where(eq(transactionsCarte.carteId, carteId));
+  }
+
+  async createTransactionCarte(insertTransaction: InsertTransactionCarte): Promise<TransactionCarte> {
+    const [transaction] = await db.insert(transactionsCarte).values(insertTransaction).returning();
+    
+    const carte = await this.getCartePointage(insertTransaction.carteId);
+    if (carte) {
+      await db.update(cartePointages)
+        .set({ 
+          versements: (Number(carte.versements) + Number(insertTransaction.montant)).toString(),
+          nombreVersements: carte.nombreVersements + 1
+        })
+        .where(eq(cartePointages.id, carte.id));
+    }
+    
+    return transaction;
   }
 
   async createRemboursement(insertRemboursement: InsertRemboursement): Promise<Remboursement> {

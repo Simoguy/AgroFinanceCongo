@@ -1,10 +1,10 @@
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, User, Phone, MapPin, Tag, Calendar, PlusCircle, MessageSquare } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Tag, Calendar, PlusCircle, MessageSquare, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Credit, CompteCourant, CartePointage, Remboursement } from "@shared/schema";
+import { Credit, CompteCourant, CartePointage, Remboursement, TransactionCarte } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,20 +23,40 @@ export default function ClientDetails() {
     enabled: type === "credit",
   });
 
+  const { data: transactionsCarte = [] } = useQuery<TransactionCarte[]>({
+    queryKey: ["/api/carte-pointages", id, "transactions"],
+    enabled: type === "carte-pointage",
+  });
+
   const mutation = useMutation({
-    mutationFn: async (data: { montant: number, type: string }) => {
-      const res = await apiRequest("POST", `/api/credits/${id}/remboursements`, {
-        creditId: id,
-        montant: data.montant.toString(),
-        type: data.type,
-        agentId: (client as Credit).agentId
-      });
+    mutationFn: async (data: { montant: number, type?: string }) => {
+      const endpoint = type === "credit" 
+        ? `/api/credits/${id}/remboursements` 
+        : `/api/carte-pointages/${id}/transactions`;
+      
+      const payload = type === "credit"
+        ? { creditId: id, montant: data.montant.toString(), type: data.type, agentId: (client as Credit).agentId }
+        : { carteId: id, montant: data.montant.toString(), agentId: (client as CartePointage).agentId };
+
+      const res = await apiRequest("POST", endpoint, payload);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/credits`, id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/credits", id, "remboursements"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      queryClient.invalidateQueries({ queryKey: [type === "credit" ? "/api/credits" : "/api/carte-pointages", id, type === "credit" ? "remboursements" : "transactions"] });
       toast({ title: "Succès", description: "Opération enregistrée" });
+    }
+  });
+
+  const solderMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/${type}s/${id}/status`, { status: "solde" });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      toast({ title: "Succès", description: "Compte soldé" });
+      setLocation("/");
     }
   });
 
@@ -49,6 +69,98 @@ export default function ClientDetails() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p>Client introuvable</p>
         <Button onClick={() => setLocation("/")}>Retour à l'accueil</Button>
+      </div>
+    );
+  }
+
+  if (type === "carte-pointage") {
+    const cp = client as CartePointage;
+    return (
+      <div className="min-h-screen pb-20 bg-[#f0f0f0] dark:bg-background">
+        <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button size="icon" variant="ghost" onClick={() => window.history.back()}><ArrowLeft className="w-5 h-5" /></Button>
+            <h1 className="text-xl font-bold">{cp.nom.split(' ')[0]}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="icon" variant="ghost" className="text-blue-500"><Phone className="w-5 h-5" /></Button>
+            <Button size="icon" variant="ghost" className="text-blue-500"><MessageSquare className="w-5 h-5" /></Button>
+            <Button size="icon" variant="ghost" className="text-blue-500"><Briefcase className="w-5 h-5" /></Button>
+          </div>
+        </header>
+
+        <div className="p-4 space-y-6">
+          {/* Top Profile Area */}
+          <div className="flex flex-col items-center py-6 bg-gray-500/10 rounded-3xl space-y-2 relative">
+             <div className="w-8 h-8 rounded-full bg-gray-400/20 absolute top-4 left-1/2 -translate-x-1/2 flex items-center justify-center">
+               <span className="text-xs">!</span>
+             </div>
+             <h2 className="text-xl font-bold mt-6">{cp.nom} {cp.prenom}</h2>
+             <p className="text-gray-500">{cp.activite}</p>
+          </div>
+
+          {/* Blue Card */}
+          <div className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden h-32 flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-xs opacity-70">Code du compte</p>
+                <p className="text-sm font-medium">{cp.code}</p>
+                <p className="text-xs opacity-70">{new Date(cp.dateCreation).toISOString().split('T')[0]}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs opacity-70">Limite credit</p>
+                <p className="text-2xl font-bold">{Number(cp.montant).toLocaleString()}</p>
+                <p className="text-[10px] opacity-70">XAF</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Versements Display */}
+          <Card className="rounded-3xl border-none shadow-sm overflow-hidden">
+            <CardContent className="p-6 space-y-2">
+              <div className="flex justify-between items-center">
+                <p className="font-bold text-lg">Versements</p>
+                <p className="text-2xl font-bold text-green-600">{Number(cp.versements).toLocaleString()}</p>
+              </div>
+              <div className="flex justify-end">
+                <p className="text-[10px] text-gray-400">XAF</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col items-center space-y-4 pt-2">
+            <p className="text-gray-600 font-medium">Nombre de versement effectuer: {cp.nombreVersements}</p>
+            <button 
+              className="text-gray-400 font-medium hover:text-blue-500 transition-colors"
+              onClick={() => {
+                const list = transactionsCarte.map(t => `${new Date(t.date).toLocaleDateString()}: ${Number(t.montant).toLocaleString()} XAF`).join("\n");
+                alert(list || "Aucun versement");
+              }}
+            >
+              Ouvrir liste de versements
+            </button>
+          </div>
+
+          <div className="space-y-3 pt-4">
+            <Button 
+              className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow-md"
+              onClick={() => {
+                const amount = prompt("Montant du versement ?");
+                if (amount) mutation.mutate({ montant: Number(amount) });
+              }}
+            >
+              Effectuer Versement
+            </Button>
+            <Button 
+              className="w-full h-14 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-lg shadow-md"
+              onClick={() => {
+                if (confirm("Voulez-vous vraiment solder ce compte ?")) solderMutation.mutate();
+              }}
+            >
+              Solder le compte
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
