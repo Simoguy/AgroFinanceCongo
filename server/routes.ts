@@ -113,24 +113,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/compte-courants/:id/transactions", async (req, res) => {
-    try {
-      const transactions = await storage.getTransactionsCompte(req.params.id);
-      res.json(transactions);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch transactions" });
-    }
-  });
-
-  app.post("/api/compte-courants/:id/transactions", async (req, res) => {
-    try {
-      const transaction = await storage.createTransactionCompte(req.body);
-      res.json(transaction);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create transaction" });
-    }
-  });
-
   app.delete("/api/compte-courants/:id", async (req, res) => {
     try {
       await storage.deleteCompteCourant(req.params.id);
@@ -190,48 +172,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/carte-pointages/:id/transactions", async (req, res) => {
-    try {
-      const transactions = await storage.getTransactionsCarte(req.params.id);
-      res.json(transactions);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch transactions" });
-    }
-  });
-
-  app.post("/api/carte-pointages/:id/transactions", async (req, res) => {
-    try {
-      const transaction = await storage.createTransactionCarte(req.body);
-      res.json(transaction);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create transaction" });
-    }
-  });
-
   app.delete("/api/carte-pointages/:id", async (req, res) => {
     try {
       await storage.deleteCartePointage(req.params.id);
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete carte pointage" });
-    }
-  });
-
-  app.get("/api/credits/:id/remboursements", async (req, res) => {
-    try {
-      const remboursements = await storage.getRemboursements(req.params.id);
-      res.json(remboursements);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch repayments" });
-    }
-  });
-
-  app.post("/api/credits/:id/remboursements", async (req, res) => {
-    try {
-      const reimbursement = await storage.createRemboursement(req.body);
-      res.json(reimbursement);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create repayment" });
     }
   });
 

@@ -75,7 +75,6 @@ export default function AddCredit() {
       adresse: "",
       zone: "",
       nombreCompte: 0,
-      limiteCredit: "30000",
       dateCreation: "",
       garantie: "",
       echeance: 0,
@@ -287,25 +286,6 @@ export default function AddCredit() {
                 Généré automatiquement
               </p>
             </div>
-
-            <FormField
-              control={form.control}
-              name="limiteCredit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Limite crédit par compte (XAF)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="30000"
-                      className="h-12"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
