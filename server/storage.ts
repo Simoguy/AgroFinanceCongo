@@ -7,10 +7,13 @@ import {
   type InsertCompteCourant,
   type CartePointage,
   type InsertCartePointage,
+  type Remboursement,
+  type InsertRemboursement,
   agents,
   credits,
   compteCourants,
-  cartePointages
+  cartePointages,
+  remboursements
 } from "@shared/schema";
 import { db } from "./db.js";
 import { eq, and } from "drizzle-orm";
@@ -36,6 +39,9 @@ export interface IStorage {
   createCartePointage(carte: InsertCartePointage): Promise<CartePointage>;
   updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined>;
   deleteCartePointage(id: string): Promise<void>;
+  
+  getRemboursements(creditId: string): Promise<Remboursement[]>;
+  createRemboursement(remboursement: InsertRemboursement): Promise<Remboursement>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -173,6 +179,30 @@ export class DatabaseStorage implements IStorage {
     await db.update(cartePointages)
       .set({ isDeleted: true, deletedAt: new Date() })
       .where(eq(cartePointages.id, id));
+  }
+
+  async getRemboursements(creditId: string): Promise<Remboursement[]> {
+    return await db.select().from(remboursements).where(eq(remboursements.creditId, creditId));
+  }
+
+  async createRemboursement(insertRemboursement: InsertRemboursement): Promise<Remboursement> {
+    const [remboursement] = await db.insert(remboursements).values(insertRemboursement).returning();
+    
+    // Update credit totals
+    const credit = await this.getCredit(insertRemboursement.creditId);
+    if (credit) {
+      if (insertRemboursement.type === "versement") {
+        await db.update(credits)
+          .set({ versements: (Number(credit.versements) + Number(insertRemboursement.montant)).toString() })
+          .where(eq(credits.id, credit.id));
+      } else {
+        await db.update(credits)
+          .set({ penalites: (Number(credit.penalites) + Number(insertRemboursement.montant)).toString() })
+          .where(eq(credits.id, credit.id));
+      }
+    }
+    
+    return remboursement;
   }
 }
 

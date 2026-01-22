@@ -23,6 +23,10 @@ export const credits = pgTable("credits", {
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
   nombreCompte: integer("nombre_compte").notNull(),
+  limiteCredit: numeric("limite_credit").notNull().default("0"),
+  versements: numeric("versements").notNull().default("0"),
+  penalites: numeric("penalites").notNull().default("0"),
+  commentaire: text("commentaire"),
   dateCreation: timestamp("date_creation").notNull(),
   garantie: text("garantie").notNull(),
   echeance: integer("echeance").notNull(),
@@ -31,6 +35,23 @@ export const credits = pgTable("credits", {
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at"),
 });
+
+export const remboursements = pgTable("remboursements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  creditId: varchar("credit_id").notNull(),
+  montant: numeric("montant").notNull(),
+  type: text("type").notNull(), // "versement" or "penalite"
+  date: timestamp("date").notNull().default(sql`now()`),
+  agentId: varchar("agent_id").notNull(),
+});
+
+export const insertRemboursementSchema = createInsertSchema(remboursements).omit({ 
+  id: true,
+  date: true 
+});
+
+export type Remboursement = typeof remboursements.$inferSelect;
+export type InsertRemboursement = z.infer<typeof insertRemboursementSchema>;
 
 export const compteCourants = pgTable("compte_courants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
