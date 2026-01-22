@@ -55,11 +55,17 @@ export default function ClientDetails() {
 
   if (type === "credit") {
     const c = client as Credit;
-    const limiteCreditIndividuel = 30000;
-    const creditTotal = Number(c.limiteCredit); // Now stored as total borrowed with interest
-    const totalVersements = Number(c.versements);
+    const baseAmount = 30000;
+    const interestFactor = 213900 / (6 * 30000); // 1.188333...
+    const creditTotal = Number(c.nombreCompte) * baseAmount * interestFactor;
+    
+    const totalVersements = Number(c.versements || 0);
+    const totalPenalites = Number(c.penalites || 0);
     const resteAPayer = creditTotal - totalVersements;
-    const totalVersementAvecPenalite = totalVersements + Number(c.penalites);
+    const totalVersementAvecPenalite = totalVersements + totalPenalites;
+
+    const versementList = remboursements.filter(r => r.type === "versement");
+    const penaliteList = remboursements.filter(r => r.type === "penalite");
 
     return (
       <div className="min-h-screen pb-20 bg-[#f0f0f0] dark:bg-background">
@@ -121,7 +127,7 @@ export default function ClientDetails() {
                   <p className="text-xs text-muted-foreground">x nombre de compte</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg text-red-600">{Number(c.penalites).toLocaleString()}</p>
+                  <p className="font-bold text-lg text-red-600">{totalPenalites.toLocaleString()}</p>
                   <p className="text-[10px] text-muted-foreground">XAF</p>
                 </div>
               </div>
@@ -136,8 +142,24 @@ export default function ClientDetails() {
               </Button>
 
               <div className="flex gap-4 border-t pt-4">
-                <button className="flex-1 text-green-600 text-sm font-bold">liste de versements</button>
-                <button className="flex-1 text-red-600 text-sm font-bold">liste de pénalités</button>
+                <button 
+                  className="flex-1 text-green-600 text-sm font-bold"
+                  onClick={() => {
+                    const list = versementList.map(v => `${new Date(v.date).toLocaleDateString()}: ${Number(v.montant).toLocaleString()} XAF`).join("\n");
+                    alert(list || "Aucun versement");
+                  }}
+                >
+                  liste de versements
+                </button>
+                <button 
+                  className="flex-1 text-red-600 text-sm font-bold"
+                  onClick={() => {
+                    const list = penaliteList.map(p => `${new Date(p.date).toLocaleDateString()}: ${Number(p.montant).toLocaleString()} XAF`).join("\n");
+                    alert(list || "Aucune pénalité");
+                  }}
+                >
+                  liste de pénalités
+                </button>
               </div>
             </CardContent>
           </Card>
