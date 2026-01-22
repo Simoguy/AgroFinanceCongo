@@ -61,16 +61,17 @@ export default function Home() {
   const deletedCartes = filteredCartes.filter(c => c.isDeleted);
 
   const categories = [
-    { id: "credit", icon: CreditCard, label: "Mon Portefeuille", count: activeCredits.length + activeComptes.length + activeCartes.length },
+    { id: "credit", icon: CreditCard, label: "Crédit", count: activeCredits.length },
+    { id: "epargne", icon: Wallet, label: "Épargne", count: activeComptes.length + activeCartes.length },
     { id: "solde", icon: CheckCircle2, label: "Soldé", count: soldeCredits.length + soldeComptes.length + soldeCartes.length },
     { id: "contencieux", icon: AlertTriangle, label: "Contencieux", count: contentieuxCredits.length + contentieuxComptes.length + contentieuxCartes.length },
   ];
 
   if (isAdmin) {
     categories.push(
-      { id: "performance", icon: TrendingUp, label: "Performance" },
+      { id: "performance", icon: TrendingUp, label: "Performance", count: 0 },
       { id: "corbeille", icon: Trash2, label: "Corbeille", count: deletedCredits.length + deletedComptes.length + deletedCartes.length },
-      { id: "agent-portfolios", icon: Users, label: "Portefeuille Agent" }
+      { id: "agent-portfolios", icon: Users, label: "Portefeuille Agent", count: 0 }
     );
   }
 
