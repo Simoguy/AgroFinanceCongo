@@ -11,12 +11,15 @@ import {
   type InsertTransactionCarte,
   type Remboursement,
   type InsertRemboursement,
+  type TransactionCompte,
+  type InsertTransactionCompte,
   agents,
   credits,
   compteCourants,
   cartePointages,
   remboursements,
-  transactionsCarte
+  transactionsCarte,
+  transactionsCompte
 } from "@shared/schema";
 import { db } from "./db.js";
 import { eq, and } from "drizzle-orm";
@@ -36,6 +39,9 @@ export interface IStorage {
   createCompteCourant(compte: InsertCompteCourant): Promise<CompteCourant>;
   updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined>;
   deleteCompteCourant(id: string): Promise<void>;
+
+  getTransactionsCompte(compteId: string): Promise<TransactionCompte[]>;
+  createTransactionCompte(transaction: InsertTransactionCompte): Promise<TransactionCompte>;
   
   getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]>;
   getCartePointage(id: string): Promise<CartePointage | undefined>;
@@ -193,6 +199,27 @@ export class DatabaseStorage implements IStorage {
 
   async getTransactionsCarte(carteId: string): Promise<TransactionCarte[]> {
     return await db.select().from(transactionsCarte).where(eq(transactionsCarte.carteId, carteId));
+  }
+
+  async getTransactionsCompte(compteId: string): Promise<TransactionCompte[]> {
+    return await db.select().from(transactionsCompte).where(eq(transactionsCompte.compteId, compteId));
+  }
+
+  async createTransactionCompte(insertTransaction: InsertTransactionCompte): Promise<TransactionCompte> {
+    const [transaction] = await db.insert(transactionsCompte).values(insertTransaction).returning();
+    
+    const compte = await this.getCompteCourant(insertTransaction.compteId);
+    if (compte) {
+      const nouveauSolde = insertTransaction.type === 'versement' 
+        ? Number(compte.solde) + Number(insertTransaction.montant)
+        : Number(compte.solde) - Number(insertTransaction.montant);
+        
+      await db.update(compteCourants)
+        .set({ solde: nouveauSolde.toString() })
+        .where(eq(compteCourants.id, compte.id));
+    }
+    
+    return transaction;
   }
 
   async createTransactionCarte(insertTransaction: InsertTransactionCarte): Promise<TransactionCarte> {

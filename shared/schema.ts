@@ -62,12 +62,31 @@ export const compteCourants = pgTable("compte_courants", {
   activite: text("activite").notNull(),
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
+  montant: numeric("montant").notNull(), // Frais du compte
+  solde: numeric("solde").notNull().default("0"),
   dateCreation: timestamp("date_creation").notNull(),
   status: text("status").notNull().default("actif"),
   agentId: varchar("agent_id").notNull(),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at"),
 });
+
+export const transactionsCompte = pgTable("transactions_compte", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  compteId: varchar("compte_id").notNull(),
+  montant: numeric("montant").notNull(),
+  type: text("type").notNull(), // 'versement' or 'retrait'
+  date: timestamp("date").notNull().default(sql`now()`),
+  agentId: varchar("agent_id").notNull(),
+});
+
+export const insertTransactionCompteSchema = createInsertSchema(transactionsCompte).omit({ 
+  id: true,
+  date: true 
+});
+
+export type TransactionCompte = typeof transactionsCompte.$inferSelect;
+export type InsertTransactionCompte = z.infer<typeof insertTransactionCompteSchema>;
 
 export const cartePointages = pgTable("carte_pointages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

@@ -113,6 +113,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/compte-courants/:id/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsCompte(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post("/api/compte-courants/:id/transactions", async (req, res) => {
+    try {
+      const transaction = await storage.createTransactionCompte(req.body);
+      res.json(transaction);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create transaction" });
+    }
+  });
+
   app.delete("/api/compte-courants/:id", async (req, res) => {
     try {
       await storage.deleteCompteCourant(req.params.id);
