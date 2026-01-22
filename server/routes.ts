@@ -181,6 +181,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/credits/:id/remboursements", async (req, res) => {
+    try {
+      const remboursements = await storage.getRemboursements(req.params.id);
+      res.json(remboursements);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch repayments" });
+    }
+  });
+
+  app.post("/api/credits/:id/remboursements", async (req, res) => {
+    try {
+      const reimbursement = await storage.createRemboursement(req.body);
+      res.json(reimbursement);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create repayment" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
