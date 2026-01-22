@@ -86,7 +86,7 @@ export default function ClientDetails() {
               </div>
               <div className="text-right">
                 <p className="text-xs opacity-80">Limite credit</p>
-                <p className="text-2xl font-bold">{limiteCreditIndividuel.toLocaleString()} <span className="text-sm">XAF</span></p>
+                <p className="text-2xl font-bold">{baseAmount.toLocaleString()} <span className="text-sm">XAF</span></p>
               </div>
             </div>
           </div>
