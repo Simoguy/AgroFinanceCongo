@@ -55,8 +55,11 @@ export default function ClientDetails() {
 
   if (type === "credit") {
     const c = client as Credit;
-    const resteAPayer = Number(c.limiteCredit) - Number(c.versements);
-    const totalVersementAvecPenalite = Number(c.versements); // Adjust logic if penalite should be added
+    const limiteCreditIndividuel = 30000;
+    const creditTotal = Number(c.limiteCredit); // Now stored as total borrowed with interest
+    const totalVersements = Number(c.versements);
+    const resteAPayer = creditTotal - totalVersements;
+    const totalVersementAvecPenalite = totalVersements + Number(c.penalites);
 
     return (
       <div className="min-h-screen pb-20 bg-[#f0f0f0] dark:bg-background">
@@ -77,7 +80,7 @@ export default function ClientDetails() {
               </div>
               <div className="text-right">
                 <p className="text-xs opacity-80">Limite credit</p>
-                <p className="text-2xl font-bold">{Number(c.limiteCredit).toLocaleString()} <span className="text-sm">XAF</span></p>
+                <p className="text-2xl font-bold">{limiteCreditIndividuel.toLocaleString()} <span className="text-sm">XAF</span></p>
               </div>
             </div>
           </div>
@@ -96,7 +99,7 @@ export default function ClientDetails() {
                   <p className="text-xs text-muted-foreground">X nombre de compte</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{(Number(c.limiteCredit) * c.nombreCompte).toLocaleString()}</p>
+                  <p className="font-bold text-lg">{creditTotal.toLocaleString()}</p>
                   <p className="text-[10px] text-muted-foreground">XAF</p>
                 </div>
               </div>
@@ -107,7 +110,7 @@ export default function ClientDetails() {
                   <p className="text-xs text-muted-foreground">x nombre de compte</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg text-green-600">-{Number(c.versements).toLocaleString()}</p>
+                  <p className="font-bold text-lg text-green-600">-{totalVersements.toLocaleString()}</p>
                   <p className="text-[10px] text-muted-foreground">XAF</p>
                 </div>
               </div>

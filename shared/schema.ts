@@ -97,6 +97,8 @@ export const insertCreditSchema = createInsertSchema(credits).omit({
   isDeleted: true, 
   deletedAt: true,
   status: true,
+  versements: true,
+  penalites: true,
 }).extend({
   dateCreation: dateSchema,
 });
