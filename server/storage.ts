@@ -7,13 +7,19 @@ import {
   type InsertCompteCourant,
   type CartePointage,
   type InsertCartePointage,
+  type TransactionCompte,
+  type InsertTransactionCompte,
+  type TransactionCarte,
+  type InsertTransactionCarte,
   agents,
   credits,
   compteCourants,
-  cartePointages
+  cartePointages,
+  transactionsCompte,
+  transactionsCarte
 } from "@shared/schema";
 import { db } from "./db.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
@@ -31,14 +37,21 @@ export interface IStorage {
   updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined>;
   deleteCompteCourant(id: string): Promise<void>;
   
+  getTransactionsCompte(compteId: string): Promise<TransactionCompte[]>;
+  createTransactionCompte(transaction: InsertTransactionCompte): Promise<TransactionCompte>;
+
   getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]>;
   getCartePointage(id: string): Promise<CartePointage | undefined>;
   createCartePointage(carte: InsertCartePointage): Promise<CartePointage>;
   updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined>;
   deleteCartePointage(id: string): Promise<void>;
+
+  getTransactionsCarte(carteId: string): Promise<TransactionCarte[]>;
+  createTransactionCarte(transaction: InsertTransactionCarte): Promise<TransactionCarte>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // ... existing agent methods ...
   async getAgent(id: string): Promise<Agent | undefined> {
     const [agent] = await db.select().from(agents).where(eq(agents.id, id));
     return agent;
@@ -49,6 +62,7 @@ export class DatabaseStorage implements IStorage {
     return agent;
   }
 
+  // ... existing credit methods ...
   async getCredits(agentId?: string, status?: string): Promise<Credit[]> {
     let query = db.select().from(credits).where(eq(credits.isDeleted, false));
     if (agentId && status) {
@@ -133,6 +147,30 @@ export class DatabaseStorage implements IStorage {
       .where(eq(compteCourants.id, id));
   }
 
+  async getTransactionsCompte(compteId: string): Promise<TransactionCompte[]> {
+    return await db.select()
+      .from(transactionsCompte)
+      .where(eq(transactionsCompte.compteId, compteId))
+      .orderBy(desc(transactionsCompte.date));
+  }
+
+  async createTransactionCompte(insertTransaction: InsertTransactionCompte): Promise<TransactionCompte> {
+    const [transaction] = await db.insert(transactionsCompte)
+      .values(insertTransaction)
+      .returning();
+
+    // Update solde
+    const change = insertTransaction.type === 'versement' 
+      ? Number(insertTransaction.montant) 
+      : -Number(insertTransaction.montant);
+
+    await db.update(compteCourants)
+      .set({ solde: sql`${compteCourants.solde} + ${change}` })
+      .where(eq(compteCourants.id, insertTransaction.compteId));
+
+    return transaction;
+  }
+
   async getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]> {
     let query = db.select().from(cartePointages).where(eq(cartePointages.isDeleted, false));
     if (agentId && status) {
@@ -173,6 +211,20 @@ export class DatabaseStorage implements IStorage {
     await db.update(cartePointages)
       .set({ isDeleted: true, deletedAt: new Date() })
       .where(eq(cartePointages.id, id));
+  }
+
+  async getTransactionsCarte(carteId: string): Promise<TransactionCarte[]> {
+    return await db.select()
+      .from(transactionsCarte)
+      .where(eq(transactionsCarte.carteId, carteId))
+      .orderBy(desc(transactionsCarte.date));
+  }
+
+  async createTransactionCarte(insertTransaction: InsertTransactionCarte): Promise<TransactionCarte> {
+    const [transaction] = await db.insert(transactionsCarte)
+      .values(insertTransaction)
+      .returning();
+    return transaction;
   }
 }
 

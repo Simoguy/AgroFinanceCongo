@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCreditSchema, insertCompteCourantSchema, insertCartePointageSchema } from "@shared/schema";
+import { insertCreditSchema, insertCompteCourantSchema, insertCartePointageSchema, insertTransactionCompteSchema, insertTransactionCarteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // CREDIT ROUTES
+  // ... existing credit routes ...
   app.get("/api/credits", async (req, res) => {
     try {
       const { agentId, status } = req.query;
@@ -122,6 +122,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/compte-courants/:id/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsCompte(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post("/api/compte-courants/:id/transactions", async (req, res) => {
+    try {
+      const validatedData = insertTransactionCompteSchema.parse({
+        ...req.body,
+        compteId: req.params.id
+      });
+      const transaction = await storage.createTransactionCompte(validatedData);
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid transaction data", details: error });
+    }
+  });
+
   // CARTE POINTAGE ROUTES
   app.get("/api/carte-pointages", async (req, res) => {
     try {
@@ -178,6 +200,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete carte pointage" });
+    }
+  });
+
+  app.get("/api/carte-pointages/:id/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getTransactionsCarte(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post("/api/carte-pointages/:id/transactions", async (req, res) => {
+    try {
+      const validatedData = insertTransactionCarteSchema.parse({
+        ...req.body,
+        carteId: req.params.id
+      });
+      const transaction = await storage.createTransactionCarte(validatedData);
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid transaction data", details: error });
     }
   });
 

@@ -41,6 +41,8 @@ export const compteCourants = pgTable("compte_courants", {
   activite: text("activite").notNull(),
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
+  montant: numeric("montant").notNull().default("0"),
+  solde: numeric("solde").notNull().default("0"),
   dateCreation: timestamp("date_creation").notNull(),
   status: text("status").notNull().default("actif"),
   agentId: varchar("agent_id").notNull(),
@@ -63,6 +65,23 @@ export const cartePointages = pgTable("carte_pointages", {
   agentId: varchar("agent_id").notNull(),
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at"),
+});
+
+export const transactionsCompte = pgTable("transactions_compte", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  compteId: varchar("compte_id").notNull(),
+  montant: numeric("montant").notNull(),
+  type: text("type").notNull(), // 'versement' or 'retrait'
+  date: timestamp("date").notNull().default(sql`now()`),
+  agentId: varchar("agent_id").notNull(),
+});
+
+export const transactionsCarte = pgTable("transactions_carte", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  carteId: varchar("carte_id").notNull(),
+  montant: numeric("montant").notNull(),
+  date: timestamp("date").notNull().default(sql`now()`),
+  agentId: varchar("agent_id").notNull(),
 });
 
 // Helper for date validation
@@ -96,6 +115,16 @@ export const insertCartePointageSchema = createInsertSchema(cartePointages).omit
   dateCreation: dateSchema,
 });
 
+export const insertTransactionCompteSchema = createInsertSchema(transactionsCompte).omit({ 
+  id: true,
+  date: true 
+});
+
+export const insertTransactionCarteSchema = createInsertSchema(transactionsCarte).omit({ 
+  id: true,
+  date: true 
+});
+
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Agent = typeof agents.$inferSelect;
 export type InsertCredit = z.infer<typeof insertCreditSchema>;
@@ -104,3 +133,7 @@ export type InsertCompteCourant = z.infer<typeof insertCompteCourantSchema>;
 export type CompteCourant = typeof compteCourants.$inferSelect;
 export type InsertCartePointage = z.infer<typeof insertCartePointageSchema>;
 export type CartePointage = typeof cartePointages.$inferSelect;
+export type TransactionCompte = typeof transactionsCompte.$inferSelect;
+export type InsertTransactionCompte = z.infer<typeof insertTransactionCompteSchema>;
+export type TransactionCarte = typeof transactionsCarte.$inferSelect;
+export type InsertTransactionCarte = z.infer<typeof insertTransactionCarteSchema>;
