@@ -9,20 +9,31 @@ import {
   Bell,
   RefreshCw,
   Users,
+  Search,
+  Filter,
 } from "lucide-react";
 import CategoryButton from "@/components/CategoryButton";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { Credit, CompteCourant, CartePointage } from "@shared/schema";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SyncManager } from "@/lib/syncManager";
-
-import { useAuth } from "@/lib/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [syncQueueSize, setSyncQueueSize] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [zoneFilter, setZoneFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const updateQueueSize = () => {
@@ -39,22 +50,41 @@ export default function Home() {
   const { data: comptes = [] } = useQuery<CompteCourant[]>({ queryKey: ["/api/compte-courants"] });
   const { data: cartes = [] } = useQuery<CartePointage[]>({ queryKey: ["/api/carte-pointages"] });
 
-  // Filter based on role
-  const filteredCredits = isAdmin ? credits : credits.filter(c => c.agentId === user?.agentId);
-  const filteredComptes = isAdmin ? comptes : comptes.filter(c => c.agentId === user?.agentId);
-  const filteredCartes = isAdmin ? cartes : cartes.filter(c => c.agentId === user?.agentId);
+  const zones = useMemo(() => {
+    const allZones = [
+      ...credits.map(c => c.zone),
+      ...comptes.map(c => c.zone),
+      ...cartes.map(c => c.zone)
+    ];
+    return Array.from(new Set(allZones)).filter(Boolean).sort();
+  }, [credits, comptes, cartes]);
 
-  const activeCredits = filteredCredits.filter(c => c.status === "actif");
-  const activeComptes = filteredComptes.filter(c => c.status === "actif");
-  const activeCartes = filteredCartes.filter(c => c.status === "actif");
+  const filterClients = <T extends { nom: string; prenom: string; code: string; zone: string; agentId: string; isDeleted?: boolean }>(items: T[]) => {
+    return items.filter(item => {
+      const matchesRole = isAdmin || item.agentId === user?.agentId;
+      const matchesSearch = !searchQuery || 
+        `${item.nom} ${item.prenom}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.code.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesZone = !zoneFilter || item.zone === zoneFilter;
+      return matchesRole && matchesSearch && matchesZone;
+    });
+  };
+
+  const filteredCredits = filterClients(credits);
+  const filteredComptes = filterClients(comptes);
+  const filteredCartes = filterClients(cartes);
+
+  const activeCredits = filteredCredits.filter(c => c.status === "actif" && !c.isDeleted);
+  const activeComptes = filteredComptes.filter(c => c.status === "actif" && !c.isDeleted);
+  const activeCartes = filteredCartes.filter(c => c.status === "actif" && !c.isDeleted);
   
-  const soldeCredits = filteredCredits.filter(c => c.status === "solde");
-  const soldeComptes = filteredComptes.filter(c => c.status === "solde");
-  const soldeCartes = filteredCartes.filter(c => c.status === "solde");
+  const soldeCredits = filteredCredits.filter(c => c.status === "solde" && !c.isDeleted);
+  const soldeComptes = filteredComptes.filter(c => c.status === "solde" && !c.isDeleted);
+  const soldeCartes = filteredCartes.filter(c => c.status === "solde" && !c.isDeleted);
 
-  const contentieuxCredits = filteredCredits.filter(c => c.status === "contentieux");
-  const contentieuxComptes = filteredComptes.filter(c => c.status === "contentieux");
-  const contentieuxCartes = filteredCartes.filter(c => c.status === "contentieux");
+  const contentieuxCredits = filteredCredits.filter(c => c.status === "contentieux" && !c.isDeleted);
+  const contentieuxComptes = filteredComptes.filter(c => c.status === "contentieux" && !c.isDeleted);
+  const contentieuxCartes = filteredCartes.filter(c => c.status === "contentieux" && !c.isDeleted);
 
   const deletedCredits = filteredCredits.filter(c => c.isDeleted);
   const deletedComptes = filteredComptes.filter(c => c.isDeleted);
@@ -79,7 +109,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pb-20 bg-background">
-      <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4">
+      <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-card-foreground">
@@ -104,9 +134,50 @@ export default function Home() {
             </Button>
           </div>
         </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Rechercher un client ou un code..." 
+              className="pl-9 h-11 bg-muted/50 border-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className={`h-11 w-11 ${zoneFilter ? 'text-primary border-primary bg-primary/5' : ''}`}>
+                <Filter className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Filtrer par Zone</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setZoneFilter(null)}>
+                Toutes les zones
+              </DropdownMenuItem>
+              {zones.map(zone => (
+                <DropdownMenuItem key={zone} onClick={() => setZoneFilter(zone)}>
+                  {zone}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </header>
 
       <div className="p-4 space-y-6">
+        {(searchQuery || zoneFilter) && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Résultats filtrés
+            </p>
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(""); setZoneFilter(null); }} className="text-xs h-7">
+              Réinitialiser
+            </Button>
+          </div>
+        )}
         <section>
           <h2 className="text-lg font-semibold text-foreground mb-4">
             Aperçu Rapide
