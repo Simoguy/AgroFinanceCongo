@@ -7,19 +7,16 @@ import {
   type InsertCompteCourant,
   type CartePointage,
   type InsertCartePointage,
-  type TransactionCompte,
-  type InsertTransactionCompte,
-  type TransactionCarte,
-  type InsertTransactionCarte,
+  type Remboursement,
+  type InsertRemboursement,
   agents,
   credits,
   compteCourants,
   cartePointages,
-  transactionsCompte,
-  transactionsCarte
+  remboursements
 } from "@shared/schema";
 import { db } from "./db.js";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
@@ -37,21 +34,17 @@ export interface IStorage {
   updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined>;
   deleteCompteCourant(id: string): Promise<void>;
   
-  getTransactionsCompte(compteId: string): Promise<TransactionCompte[]>;
-  createTransactionCompte(transaction: InsertTransactionCompte): Promise<TransactionCompte>;
-
   getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]>;
   getCartePointage(id: string): Promise<CartePointage | undefined>;
   createCartePointage(carte: InsertCartePointage): Promise<CartePointage>;
   updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined>;
   deleteCartePointage(id: string): Promise<void>;
-
-  getTransactionsCarte(carteId: string): Promise<TransactionCarte[]>;
-  createTransactionCarte(transaction: InsertTransactionCarte): Promise<TransactionCarte>;
+  
+  getRemboursements(creditId: string): Promise<Remboursement[]>;
+  createRemboursement(remboursement: InsertRemboursement): Promise<Remboursement>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // ... existing agent methods ...
   async getAgent(id: string): Promise<Agent | undefined> {
     const [agent] = await db.select().from(agents).where(eq(agents.id, id));
     return agent;
@@ -62,7 +55,6 @@ export class DatabaseStorage implements IStorage {
     return agent;
   }
 
-  // ... existing credit methods ...
   async getCredits(agentId?: string, status?: string): Promise<Credit[]> {
     let query = db.select().from(credits).where(eq(credits.isDeleted, false));
     if (agentId && status) {
@@ -147,30 +139,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(compteCourants.id, id));
   }
 
-  async getTransactionsCompte(compteId: string): Promise<TransactionCompte[]> {
-    return await db.select()
-      .from(transactionsCompte)
-      .where(eq(transactionsCompte.compteId, compteId))
-      .orderBy(desc(transactionsCompte.date));
-  }
-
-  async createTransactionCompte(insertTransaction: InsertTransactionCompte): Promise<TransactionCompte> {
-    const [transaction] = await db.insert(transactionsCompte)
-      .values(insertTransaction)
-      .returning();
-
-    // Update solde
-    const change = insertTransaction.type === 'versement' 
-      ? Number(insertTransaction.montant) 
-      : -Number(insertTransaction.montant);
-
-    await db.update(compteCourants)
-      .set({ solde: sql`${compteCourants.solde} + ${change}` })
-      .where(eq(compteCourants.id, insertTransaction.compteId));
-
-    return transaction;
-  }
-
   async getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]> {
     let query = db.select().from(cartePointages).where(eq(cartePointages.isDeleted, false));
     if (agentId && status) {
@@ -213,18 +181,28 @@ export class DatabaseStorage implements IStorage {
       .where(eq(cartePointages.id, id));
   }
 
-  async getTransactionsCarte(carteId: string): Promise<TransactionCarte[]> {
-    return await db.select()
-      .from(transactionsCarte)
-      .where(eq(transactionsCarte.carteId, carteId))
-      .orderBy(desc(transactionsCarte.date));
+  async getRemboursements(creditId: string): Promise<Remboursement[]> {
+    return await db.select().from(remboursements).where(eq(remboursements.creditId, creditId));
   }
 
-  async createTransactionCarte(insertTransaction: InsertTransactionCarte): Promise<TransactionCarte> {
-    const [transaction] = await db.insert(transactionsCarte)
-      .values(insertTransaction)
-      .returning();
-    return transaction;
+  async createRemboursement(insertRemboursement: InsertRemboursement): Promise<Remboursement> {
+    const [remboursement] = await db.insert(remboursements).values(insertRemboursement).returning();
+    
+    // Update credit totals
+    const credit = await this.getCredit(insertRemboursement.creditId);
+    if (credit) {
+      if (insertRemboursement.type === "versement") {
+        await db.update(credits)
+          .set({ versements: (Number(credit.versements) + Number(insertRemboursement.montant)).toString() })
+          .where(eq(credits.id, credit.id));
+      } else {
+        await db.update(credits)
+          .set({ penalites: (Number(credit.penalites) + Number(insertRemboursement.montant)).toString() })
+          .where(eq(credits.id, credit.id));
+      }
+    }
+    
+    return remboursement;
   }
 }
 

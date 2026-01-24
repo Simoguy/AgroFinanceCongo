@@ -23,6 +23,10 @@ export const credits = pgTable("credits", {
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
   nombreCompte: integer("nombre_compte").notNull(),
+  limiteCredit: numeric("limite_credit").notNull().default("0"),
+  versements: numeric("versements").notNull().default("0"),
+  penalites: numeric("penalites").notNull().default("0"),
+  commentaire: text("commentaire"),
   dateCreation: timestamp("date_creation").notNull(),
   garantie: text("garantie").notNull(),
   echeance: integer("echeance").notNull(),
@@ -31,6 +35,23 @@ export const credits = pgTable("credits", {
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at"),
 });
+
+export const remboursements = pgTable("remboursements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  creditId: varchar("credit_id").notNull(),
+  montant: numeric("montant").notNull(),
+  type: text("type").notNull(), // "versement" or "penalite"
+  date: timestamp("date").notNull().default(sql`now()`),
+  agentId: varchar("agent_id").notNull(),
+});
+
+export const insertRemboursementSchema = createInsertSchema(remboursements).omit({ 
+  id: true,
+  date: true 
+});
+
+export type Remboursement = typeof remboursements.$inferSelect;
+export type InsertRemboursement = z.infer<typeof insertRemboursementSchema>;
 
 export const compteCourants = pgTable("compte_courants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -41,8 +62,6 @@ export const compteCourants = pgTable("compte_courants", {
   activite: text("activite").notNull(),
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
-  montant: numeric("montant").notNull().default("0"),
-  solde: numeric("solde").notNull().default("0"),
   dateCreation: timestamp("date_creation").notNull(),
   status: text("status").notNull().default("actif"),
   agentId: varchar("agent_id").notNull(),
@@ -67,23 +86,6 @@ export const cartePointages = pgTable("carte_pointages", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const transactionsCompte = pgTable("transactions_compte", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  compteId: varchar("compte_id").notNull(),
-  montant: numeric("montant").notNull(),
-  type: text("type").notNull(), // 'versement' or 'retrait'
-  date: timestamp("date").notNull().default(sql`now()`),
-  agentId: varchar("agent_id").notNull(),
-});
-
-export const transactionsCarte = pgTable("transactions_carte", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  carteId: varchar("carte_id").notNull(),
-  montant: numeric("montant").notNull(),
-  date: timestamp("date").notNull().default(sql`now()`),
-  agentId: varchar("agent_id").notNull(),
-});
-
 // Helper for date validation
 const dateSchema = z.preprocess((arg) => {
   if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
@@ -95,6 +97,8 @@ export const insertCreditSchema = createInsertSchema(credits).omit({
   isDeleted: true, 
   deletedAt: true,
   status: true,
+  versements: true,
+  penalites: true,
 }).extend({
   dateCreation: dateSchema,
 });
@@ -115,16 +119,6 @@ export const insertCartePointageSchema = createInsertSchema(cartePointages).omit
   dateCreation: dateSchema,
 });
 
-export const insertTransactionCompteSchema = createInsertSchema(transactionsCompte).omit({ 
-  id: true,
-  date: true 
-});
-
-export const insertTransactionCarteSchema = createInsertSchema(transactionsCarte).omit({ 
-  id: true,
-  date: true 
-});
-
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Agent = typeof agents.$inferSelect;
 export type InsertCredit = z.infer<typeof insertCreditSchema>;
@@ -133,7 +127,3 @@ export type InsertCompteCourant = z.infer<typeof insertCompteCourantSchema>;
 export type CompteCourant = typeof compteCourants.$inferSelect;
 export type InsertCartePointage = z.infer<typeof insertCartePointageSchema>;
 export type CartePointage = typeof cartePointages.$inferSelect;
-export type TransactionCompte = typeof transactionsCompte.$inferSelect;
-export type InsertTransactionCompte = z.infer<typeof insertTransactionCompteSchema>;
-export type TransactionCarte = typeof transactionsCarte.$inferSelect;
-export type InsertTransactionCarte = z.infer<typeof insertTransactionCarteSchema>;
