@@ -1,181 +1,112 @@
-import { audit } from "@/lib/audit";
-import {
-  addSecurityLog,
-  getSecurityLogs,
-  clearSecurityLogs,
-} from "@/lib/securityLogs";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShieldCheck, Trash2 } from "lucide-react";
+import { LogOut, Moon, Sun, ShieldCheck, Users, Bell, BellOff } from "lucide-react";
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 import { useAuth } from "@/lib/auth";
 
-/* ========================= */
-/* TYPES                     */
-/* ========================= */
-type Log = {
-  date: string;
-  user: string;
-  type: "ACCES" | "ACTION" | "ADMIN";
-  action: string;
-};
+export default function Profile() {
+  const [isDark, setIsDark] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [, setLocation] = useLocation();
+  const { user, logout } = useAuth();
 
-export default function SecurityProfile() {
-  const { user } = useAuth();
-
-  const currentUser = user?.name || "Utilisateur inconnu";
-  const isAdmin = user?.role === "admin";
-
-  const [showLogs, setShowLogs] = useState(false);
-  const [logs, setLogs] = useState<Log[]>([]);
-
-  /* ========================= */
-  /* CHARGEMENT INITIAL        */
-  /* ========================= */
-  useEffect(() => {
-    setLogs(getSecurityLogs());
-    addLog("ACCES", "Accès à Sécurité & Confidentialité");
-  }, []);
-
-  /* ========================= */
-  /* AJOUT DE LOG              */
-  /* ========================= */
-  const addLog = async (type: Log["type"], action: string) => {
-    const newLog: Log = {
-      date: new Date().toLocaleString(),
-      user: currentUser,
-      type,
-      action,
-    };
-
-    const updatedLogs = await addSecurityLog(newLog);
-    setLogs(updatedLogs);
+  const currentUser = user || {
+    name: "Direction AGR",
+    role: "admin",
+    agentId: "ADM-MAIN"
   };
 
-  /* ========================= */
-  /* OUVERTURE DES LOGS        */
-  /* ========================= */
-  const handleOpenLogs = () => {
-    setShowLogs(!showLogs);
-    addLog("ACTION", "Ouverture de la traçabilité");
-  };
-
-  /* ========================= */
-  /* SUPPRESSION DES LOGS      */
-  /* ========================= */
-  const handleClearLogs = async () => {
-    if (!window.confirm("Voulez-vous vraiment supprimer tous les logs ?")) return;
-
-    clearSecurityLogs();
-
-    const adminLog: Log = {
-      date: new Date().toLocaleString(),
-      user: currentUser,
-      type: "ADMIN",
-      action: "Suppression de tous les logs",
-    };
-
-    const updatedLogs = await addSecurityLog(adminLog);
-    setLogs(updatedLogs);
-  };
-
-  /* ========================= */
-  /* COULEUR DES BADGES        */
-  /* ========================= */
-  const badgeVariant = (type: Log["type"]) => {
-    switch (type) {
-      case "ACCES":
-        return "secondary";
-      case "ACTION":
-        return "default";
-      case "ADMIN":
-        return "destructive";
-      default:
-        return "outline";
-    }
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+    document.documentElement.classList.toggle("dark");
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-6">
-      {/* ========================= */}
-      {/* TITRE                    */}
-      {/* ========================= */}
-      <header className="flex items-center gap-2">
-        <ShieldCheck className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-bold">Sécurité & Confidentialité</h1>
+    <div className="min-h-screen pb-20 bg-background">
+      <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4">
+        <h1 className="text-2xl font-bold text-card-foreground">Profil</h1>
       </header>
 
-      {/* ========================= */}
-      {/* BOUTON LOGS               */}
-      {/* ========================= */}
-      <Button onClick={handleOpenLogs}>
-        Traçabilité / Logs
-      </Button>
+      <div className="p-4 space-y-6">
+        <div className="flex flex-col items-center pt-6 pb-4">
+          <Avatar className="h-24 w-24 mb-4">
+            <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
+              AGR
+            </AvatarFallback>
+          </Avatar>
+          <h2 className="text-2xl font-bold text-foreground">{currentUser.name}</h2>
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">
+              ADMINISTRATEUR PRINCIPAL
+            </Badge>
+          </div>
+        </div>
 
-      {/* ========================= */}
-      {/* AFFICHAGE DES LOGS        */}
-      {/* ========================= */}
-      {showLogs && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Journal d’activité</CardTitle>
+        {currentUser.role === "admin" && (
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary" />
+              Administration
+            </h3>
+            <Button
+              className="w-full h-12 justify-start gap-3 bg-primary/10 text-primary hover:bg-primary/20 border-none"
+              onClick={() => setLocation("/admin/access")}
+              data-testid="button-manage-access"
+            >
+              <Users className="w-5 h-5" />
+              <span>Gestion accès</span>
+            </Button>
+          </section>
+        )}
 
-            {isAdmin && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearLogs}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Vider
-              </Button>
-            )}
-          </CardHeader>
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Paramètres</h3>
 
-          <CardContent>
-            <ScrollArea className="h-64 pr-2">
-              <div className="space-y-3">
-                {logs.map((log, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start justify-between gap-4 border-b pb-2"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{log.action}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {log.date} — {log.user}
-                      </p>
-                    </div>
-
-                    <Badge variant={badgeVariant(log.type)}>
-                      {log.type}
-                    </Badge>
-                  </div>
-                ))}
+          <Card>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {notificationsEnabled ? <Bell className="w-5 h-5 text-primary" /> : <BellOff className="w-5 h-5 text-muted-foreground" />}
+                <Label htmlFor="notifications" className="cursor-pointer">Notifications</Label>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+              <Switch
+                id="notifications"
+                checked={notificationsEnabled}
+                onCheckedChange={setNotificationsEnabled}
+              />
+            </CardContent>
+          </Card>
 
-      {/* ========================= */}
-      {/* NOUVELLE SECTION          */}
-      {/* ========================= */}
-      <Card className="border-destructive/40">
-        <CardHeader>
-          <CardTitle className="text-destructive">
-            Réinitialiser le compte utilisateur
-          </CardTitle>
-        </CardHeader>
+          <Button
+            variant="outline"
+            className="w-full h-12 justify-start gap-3"
+            onClick={toggleTheme}
+            data-testid="button-theme-toggle"
+          >
+            {isDark ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+            <span>{isDark ? "Mode clair" : "Mode sombre"}</span>
+          </Button>
 
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Fonctionnalité à venir.
-          </p>
-        </CardContent>
-      </Card>
+          <Button
+            variant="destructive"
+            className="w-full h-12 justify-start gap-3"
+            data-testid="button-logout"
+            onClick={logout}
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Se déconnecter</span>
+          </Button>
+        </section>
+      </div>
     </div>
   );
 }

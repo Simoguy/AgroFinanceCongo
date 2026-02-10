@@ -1,22 +1,18 @@
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, User, Phone, MapPin, Tag, Calendar, PlusCircle, MessageSquare, Scale, X, Camera, FileText, AlertCircle } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Tag, Calendar, PlusCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Credit, CompteCourant, CartePointage, Remboursement } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-import { format } from "date-fns";
 
 export default function ClientDetails() {
   const [, params] = useRoute("/client/:type/:id");
   const [, setLocation] = useLocation();
   const { type, id } = params || {};
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'versements' | 'penalites' | 'retraits' | null>(null);
 
   const { data: client, isLoading } = useQuery<Credit | CompteCourant | CartePointage>({
     queryKey: [`/api/${type}s`, id],
@@ -24,53 +20,28 @@ export default function ClientDetails() {
 
   const { data: remboursements = [] } = useQuery<Remboursement[]>({
     queryKey: ["/api/credits", id, "remboursements"],
-    enabled: !!id && type === "credit",
+    enabled: type === "credit",
   });
 
   const mutation = useMutation({
     mutationFn: async (data: { montant: number, type: string }) => {
-      const endpoint = type === "credit" ? `/api/credits/${id}/remboursements` : `/api/${type}s/${id}/transactions`;
-      const res = await apiRequest("POST", endpoint, {
+      const res = await apiRequest("POST", `/api/credits/${id}/remboursements`, {
+        creditId: id,
         montant: data.montant.toString(),
         type: data.type,
+        agentId: (client as Credit).agentId
       });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      queryClient.invalidateQueries({ queryKey: [`/api/credits`, id] });
       queryClient.invalidateQueries({ queryKey: ["/api/credits", id, "remboursements"] });
       toast({ title: "Succès", description: "Opération enregistrée" });
     }
   });
 
-  const solderMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("PATCH", `/api/${type}s/${id}/status`, { status: 'solde' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
-      toast({ title: "Succès", description: "Compte soldé" });
-      setLocation("/solde");
-    }
-  });
-
-  const contencieuxMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("PATCH", `/api/${type}s/${id}/status`, { status: 'contentieux' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
-      toast({ title: "Succès", description: "Client transféré en contentieux" });
-      setLocation("/contentieux");
-    }
-  });
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-screen"><p>Chargement...</p></div>;
   }
 
   if (!client) {
@@ -82,255 +53,182 @@ export default function ClientDetails() {
     );
   }
 
-  const isCredit = type === "credit";
-  const isCompteCourant = type === "compte-courant";
-  const isPointage = type === "carte-pointage";
-
-  if (isCredit) {
+  if (type === "credit") {
     const c = client as Credit;
     const baseAmount = 30000;
-    const interestFactor = 213900 / (6 * 30000);
+    const interestFactor = 213900 / (6 * 30000); // 1.188333...
     const creditTotal = Number(c.nombreCompte) * baseAmount * interestFactor;
+    
     const totalVersements = Number(c.versements || 0);
     const totalPenalites = Number(c.penalites || 0);
     const resteAPayer = creditTotal - totalVersements;
+    const totalVersementAvecPenalite = totalVersements + totalPenalites;
 
-    const versementsList = remboursements.filter(r => r.type === "versement");
-    const penalitesList = remboursements.filter(r => r.type === "penalite");
+    const versementList = remboursements.filter(r => r.type === "versement");
+    const penaliteList = remboursements.filter(r => r.type === "penalite");
 
     return (
-      <div className="min-h-screen pb-28 bg-[#f2f2f7]">
-        <div className="bg-transparent px-4 h-14 flex items-center justify-between sticky top-0 z-50">
-          <button onClick={() => window.history.back()} className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-slate-800" />
-          </button>
-        </div>
+      <div className="min-h-screen pb-20 bg-[#f0f0f0] dark:bg-background">
+        <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4 flex items-center gap-3">
+          <Button size="icon" variant="ghost" onClick={() => window.history.back()}><ArrowLeft className="w-5 h-5" /></Button>
+          <h1 className="text-xl font-bold">Détails Crédit</h1>
+        </header>
 
-        <div className="max-w-2xl mx-auto p-4 space-y-6">
-          <div className="bg-gradient-to-r from-blue-400 to-indigo-600 rounded-3xl p-6 text-white shadow-lg space-y-4">
+        <div className="p-4 space-y-4">
+          {/* Top Card (Blue Gradient) */}
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-700 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <p className="text-xs opacity-80 uppercase font-bold tracking-wider">Code du compte</p>
-                <h2 className="text-xl font-bold uppercase">{c.code}</h2>
-                <p className="text-xs opacity-80">{format(new Date(c.dateCreation), 'yyyy-MM-dd')}</p>
+                <p className="text-xs opacity-80">Code du compte</p>
+                <p className="text-xl font-bold">{c.code}</p>
+                <p className="text-xs opacity-80">{new Date(c.dateCreation).toISOString().split('T')[0]}</p>
                 <p className="text-xs opacity-80">{c.telephone}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] uppercase opacity-80 font-bold">Limite credit</p>
-                <p className="text-2xl font-black">{baseAmount.toLocaleString()}</p>
-                <p className="text-[10px] opacity-80 font-bold">XAF</p>
+                <p className="text-xs opacity-80">Limite credit</p>
+                <p className="text-2xl font-bold">{limiteCreditIndividuel.toLocaleString()} <span className="text-sm">XAF</span></p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-sm space-y-6">
-            <div className="flex justify-between items-center">
-              <span className="text-base font-medium text-slate-800">Nombre de compte</span>
-              <span className="text-xl font-bold">{c.nombreCompte}</span>
-            </div>
-
-            <div className="space-y-1">
+          {/* Stats Card */}
+          <Card className="rounded-3xl border-none shadow-sm">
+            <CardContent className="p-6 space-y-6">
               <div className="flex justify-between items-center">
+                <p className="font-medium">Nombre de compte</p>
+                <p className="font-bold text-lg">{c.nombreCompte}</p>
+              </div>
+
+              <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-base font-medium text-slate-800 block">Credit total</span>
-                  <span className="text-xs text-slate-400 italic">X nombre de compte</span>
+                  <p className="font-medium">Credit total</p>
+                  <p className="text-xs text-muted-foreground">X nombre de compte</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-bold block">{creditTotal.toLocaleString()}</span>
-                  <span className="text-[10px] text-slate-400 font-bold">XAF</span>
+                  <p className="font-bold text-lg">{creditTotal.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">XAF</p>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-base font-medium text-slate-800 block">Versements</span>
-                  <span className="text-xs text-slate-400 italic">x nombre de compte</span>
+                  <p className="font-medium">Versements</p>
+                  <p className="text-xs text-muted-foreground">x nombre de compte</p>
                 </div>
-                <div className="text-right text-green-500">
-                  <span className="text-xl font-bold block">-{totalVersements.toLocaleString()}</span>
-                  <span className="text-[10px] opacity-80 font-bold">XAF</span>
+                <div className="text-right">
+                  <p className="font-bold text-lg text-green-600">-{totalVersements.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">XAF</p>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-base font-medium text-slate-800 block">Pénalités</span>
-                  <span className="text-xs text-slate-400 italic">x nombre de compte</span>
+                  <p className="font-medium">Pénalités</p>
+                  <p className="text-xs text-muted-foreground">x nombre de compte</p>
                 </div>
-                <div className="text-right text-red-500">
-                  <span className="text-xl font-bold block">{totalPenalites.toLocaleString()}</span>
-                  <span className="text-[10px] opacity-80 font-bold">XAF</span>
+                <div className="text-right">
+                  <p className="font-bold text-lg text-red-600">{totalPenalites.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">XAF</p>
                 </div>
               </div>
-            </div>
 
-            <div className="pt-2">
-              <button className="w-full flex items-center justify-center gap-2 py-4 text-green-600 font-bold text-lg">
-                <MessageSquare className="w-5 h-5" />
-                Commenter
-              </button>
-            </div>
-          </div>
+              <div className="space-y-2">
+                <p className="font-medium">Commentaire</p>
+                <p className="text-sm text-muted-foreground min-h-[40px]">{c.commentaire || "Aucun commentaire"}</p>
+              </div>
 
-          <div className="bg-white rounded-3xl p-4 flex gap-4 shadow-sm">
-            <button 
-              onClick={() => setActiveTab(activeTab === 'versements' ? null : 'versements')}
-              className={`flex-1 py-4 font-bold border-r border-slate-100 ${activeTab === 'versements' ? 'text-primary' : 'text-green-600'}`}
-            >
-              liste de versements
-            </button>
-            <button 
-              onClick={() => setActiveTab(activeTab === 'penalites' ? null : 'penalites')}
-              className={`flex-1 py-4 font-bold ${activeTab === 'penalites' ? 'text-primary' : 'text-red-400'}`}
-            >
-              liste de pénalités
-            </button>
-          </div>
+              <Button variant="ghost" className="w-full text-green-600 font-bold flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" /> Commenter
+              </Button>
 
-          <AnimatePresence>
-            {activeTab && (
-              <motion.div 
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="bg-white rounded-3xl p-4 shadow-sm space-y-2 max-h-60 overflow-y-auto">
-                  <h4 className="text-sm font-bold text-slate-500 px-2 uppercase">
-                    {activeTab === 'versements' ? 'Historique des versements' : 'Historique des pénalités'}
-                  </h4>
-                  {(activeTab === 'versements' ? versementsList : penalitesList).map(t => (
-                    <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl">
-                      <span className="text-xs text-slate-500">{format(new Date(t.date), 'dd/MM/yyyy')}</span>
-                      <span className={`font-bold ${activeTab === 'versements' ? 'text-green-600' : 'text-red-500'}`}>
-                        {Number(t.montant).toLocaleString()} XAF
-                      </span>
-                    </div>
-                  ))}
-                  {(activeTab === 'versements' ? versementsList : penalitesList).length === 0 && (
-                    <p className="text-center py-4 text-slate-400 italic">Aucune transaction trouvée</p>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              <div className="flex gap-4 border-t pt-4">
+                <button 
+                  className="flex-1 text-green-600 text-sm font-bold"
+                  onClick={() => {
+                    const list = versementList.map(v => `${new Date(v.date).toLocaleDateString()}: ${Number(v.montant).toLocaleString()} XAF`).join("\n");
+                    alert(list || "Aucun versement");
+                  }}
+                >
+                  liste de versements
+                </button>
+                <button 
+                  className="flex-1 text-red-600 text-sm font-bold"
+                  onClick={() => {
+                    const list = penaliteList.map(p => `${new Date(p.date).toLocaleDateString()}: ${Number(p.montant).toLocaleString()} XAF`).join("\n");
+                    alert(list || "Aucune pénalité");
+                  }}
+                >
+                  liste de pénalités
+                </button>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-3xl p-6 shadow-sm space-y-4">
+          {/* Bottom Totals */}
+          <div className="space-y-4 px-2">
             <div className="flex justify-between items-center">
-              <span className="text-base font-bold text-slate-800">Reste a payer sur le crédit</span>
+              <p className="font-bold">Reste a payer sur le crédit</p>
               <div className="text-right">
-                <span className="text-xl font-bold block">= {resteAPayer.toLocaleString()}</span>
-                <span className="text-[10px] text-slate-400 font-bold">XAF</span>
+                <p className="font-bold">= {resteAPayer.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">XAF</p>
               </div>
             </div>
 
             <div className="flex justify-between items-center text-red-600">
-              <span className="text-base font-bold">Total versement avec pénalité</span>
+              <p className="font-bold">Total versement avec pénalité</p>
               <div className="text-right">
-                <span className="text-xl font-bold block">= {(totalVersements + totalPenalites).toLocaleString()}</span>
-                <span className="text-[10px] opacity-80 font-bold">XAF</span>
+                <p className="font-bold">= {totalVersementAvecPenalite.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground text-red-600/60">XAF</p>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 flex flex-col gap-3">
-            <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-lg" onClick={() => {
+          <div className="space-y-3 pt-4">
+            <Button className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow-md" onClick={() => {
               const amount = prompt("Montant du versement ?");
               if (amount) mutation.mutate({ montant: Number(amount), type: "versement" });
             }}>
               Effectuer Versement
             </Button>
-            <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-2 border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight" onClick={() => {
+            <Button variant="outline" className="w-full h-14 rounded-2xl border-2 font-bold text-lg" onClick={() => {
               const amount = prompt("Montant de la pénalité ?");
               if (amount) mutation.mutate({ montant: Number(amount), type: "penalite" });
             }}>
               Appliquer Pénalité
             </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => contencieuxMutation.mutate()} variant="secondary" className="h-14 rounded-2xl font-bold text-red-600">CONTENTIEUX</Button>
-              <Button onClick={() => solderMutation.mutate()} variant="secondary" className="h-14 rounded-2xl font-bold text-green-600">SOLDER</Button>
-            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Épargne Details (Pointage / Compte Courant)
-  const e = client as (CartePointage | CompteCourant);
-  const initialMise = Number((e as any).montant || (e as any).mise || 0);
-  const accountFee = isCompteCourant ? 5000 : 0;
-  const solde = Math.max(0, initialMise - accountFee);
-
   return (
-    <div className="min-h-screen bg-[#f2f2f7] pb-28">
-      <div className="bg-transparent px-4 h-14 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <button onClick={() => window.history.back()} className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-slate-800" />
-          </button>
-        </div>
-        <div className="flex items-center gap-4">
-          <Phone className="w-5 h-5 text-[#007AFF] fill-[#007AFF]" />
-          <FileText className="w-5 h-5 text-[#007AFF]" />
-          <Camera className="w-5 h-5 text-[#007AFF]" />
-        </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-4 space-y-4">
-        <div className="bg-[#5c5c5c] rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="w-12 h-12 bg-[#3a3a3a] rounded-full flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-slate-400" />
+    <div className="min-h-screen pb-20 bg-background">
+      <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4 flex items-center gap-3">
+        <Button size="icon" variant="ghost" onClick={() => window.history.back()}><ArrowLeft className="w-5 h-5" /></Button>
+        <h1 className="text-2xl font-bold">Détails du Client</h1>
+      </header>
+      <div className="p-4 space-y-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"><User className="w-8 h-8 text-primary" /></div>
+            <div className="flex-1">
+              <CardTitle className="text-xl">{client.nom} {client.prenom}</CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="text-xs">{client.code}</Badge>
+                <Badge className="bg-primary/20 text-primary border-none text-xs">{client.status.toUpperCase()}</Badge>
+              </div>
             </div>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold tracking-tight uppercase">{e.nom} {e.prenom}</h2>
-              <p className="text-slate-300 font-medium">{e.activite || "technicien"}</p>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="flex items-center gap-3"><Phone className="w-4 h-4 text-muted-foreground" /><span className="text-sm">{client.telephone}</span></div>
+              <div className="flex items-center gap-3"><MapPin className="w-4 h-4 text-muted-foreground" /><span className="text-sm">{client.adresse} ({client.zone})</span></div>
+              <div className="flex items-center gap-3"><Tag className="w-4 h-4 text-muted-foreground" /><span className="text-sm">{client.activite}</span></div>
+              <div className="flex items-center gap-3"><Calendar className="w-4 h-4 text-muted-foreground" /><span className="text-sm">Créé le {new Date(client.dateCreation).toLocaleDateString("fr-FR")}</span></div>
             </div>
-          </div>
-          <div className="mt-8 bg-gradient-to-r from-[#00aeef] via-[#0071bc] to-[#662d91] rounded-[1.5rem] p-6 flex justify-between items-end">
-            <div className="space-y-1">
-              <p className="text-[10px] opacity-70 uppercase font-bold tracking-wider">Code du compte</p>
-              <p className="text-sm font-mono font-bold tracking-wider">{e.code}</p>
-              <p className="text-xs font-medium opacity-80">{format(new Date(e.dateCreation), 'yyyy-MM-dd')}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] opacity-70 uppercase font-bold">Mise initiale</p>
-              <p className="text-2xl font-black leading-none">{initialMise.toLocaleString()}</p>
-              <p className="text-[10px] opacity-70 font-bold mt-1">XAF</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#eeeeee] rounded-[2rem] p-8 shadow-sm relative min-h-[140px] flex flex-col justify-center">
-          <div className="flex justify-between items-center w-full">
-            <span className="text-xl font-black text-slate-800">{isPointage ? 'Versements' : 'Solde'}</span>
-            <span className="text-2xl font-black text-[#4caf50]">
-              {solde.toLocaleString()}
-            </span>
-          </div>
-          <p className="absolute bottom-6 right-8 text-[10px] font-bold text-slate-400">XAF</p>
-        </div>
-
-        <div className="pt-4 flex flex-col gap-3">
-          <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-md" onClick={() => {
-            const amount = prompt("Montant du versement ?");
-            if (amount) mutation.mutate({ montant: Number(amount), type: "versement" });
-          }}>
-            EFFECTUER UN VERSEMENT
-          </Button>
-          <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight shadow-sm" onClick={() => {
-            const amount = prompt("Montant du retrait ?");
-            if (amount) mutation.mutate({ montant: Number(amount), type: "retrait" });
-          }}>
-            EFFECTUER UN RETRAIT
-          </Button>
-          <Button onClick={() => solderMutation.mutate()} variant="secondary" className="w-full h-16 rounded-[1.5rem] font-bold text-red-600 uppercase shadow-sm">Solder le compte</Button>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

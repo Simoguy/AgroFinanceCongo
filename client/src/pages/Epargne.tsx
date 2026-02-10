@@ -1,133 +1,128 @@
-import { useUsers } from "@/hooks/use-users";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Search, Plus, Wallet, FileText, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { CompteCourant, CartePointage } from "@shared/schema";
 
-export default function Epargne() {
+export default function EpargnePage() {
   const [, setLocation] = useLocation();
-  const { data: users = [], isLoading } = useUsers();
+  const [activeTab, setActiveTab] = useState("carte");
 
-  const points = users.filter((u: any) => u.role === 'carte_pointage' && !u.isSolded).map((u: any) => ({ ...u, type: 'carte-pointage' }));
-  const accounts = users.filter((u: any) => u.role === 'compte_courant' && !u.isSolded).map((u: any) => {
-    const initialMise = parseFloat(u.mise?.toString() || "0");
-    const adjustedAmount = Math.max(0, initialMise - 5000);
-    return { ...u, adjustedAmount, type: 'compte-courant' };
+  const { data: cartes, isLoading: loadingCartes } = useQuery<CartePointage[]>({
+    queryKey: ["/api/carte-pointages", { status: "actif" }],
+    queryFn: async () => {
+      const response = await fetch("/api/carte-pointages?status=actif");
+      if (!response.ok) throw new Error("Failed to fetch cards");
+      return response.json();
+    },
+    enabled: activeTab === "carte",
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const { data: comptes, isLoading: loadingComptes } = useQuery<CompteCourant[]>({
+    queryKey: ["/api/compte-courants", { status: "actif" }],
+    queryFn: async () => {
+      const response = await fetch("/api/compte-courants?status=actif");
+      if (!response.ok) throw new Error("Failed to fetch accounts");
+      return response.json();
+    },
+    enabled: activeTab === "compte",
+  });
+
+  const isLoading = activeTab === "carte" ? loadingCartes : loadingComptes;
+  const clients = activeTab === "carte" ? cartes : comptes;
 
   return (
-    <div className="min-h-screen bg-white pb-28">
-      {/* Custom Header */}
-      <div className="bg-white px-4 h-14 flex items-center gap-4 sticky top-0 z-50">
-        <button onClick={() => setLocation("/")} className="p-2 -ml-2">
-          <ArrowLeft className="w-6 h-6 text-slate-800" />
-        </button>
-        <h1 className="text-xl font-bold">Épargne</h1>
-      </div>
-
-      <Tabs defaultValue="pointage" className="w-full">
-        <TabsList className="w-full h-14 bg-white border-b rounded-none p-0 flex">
-          <TabsTrigger 
-            value="pointage" 
-            className="flex-1 h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-white text-slate-500 font-medium text-xs"
+    <div className="min-h-screen pb-20 bg-background">
+      <header className="sticky top-0 z-40 bg-card border-b border-card-border px-4 py-4">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setLocation("/")}
+              data-testid="button-back"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold text-card-foreground">Épargne</h1>
+          </div>
+          <Button
+            size="icon"
+            className="rounded-full"
+            onClick={() => setLocation(activeTab === "carte" ? "/add/carte-pointage" : "/add/compte-courant")}
+            data-testid="button-add-epargne"
           >
-            Carte de pointage
-          </TabsTrigger>
-          <TabsTrigger 
-            value="courant" 
-            className="flex-1 h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:bg-white text-slate-500 font-medium text-xs"
-          >
-            Compte courant
-          </TabsTrigger>
-        </TabsList>
-
-        <div className="p-4">
-          <TabsContent value="pointage" className="mt-0 space-y-0">
-            {points.length === 0 ? (
-              <div className="py-20 text-center text-slate-400">Aucune carte de pointage</div>
-            ) : (
-              points.map((user: any) => (
-                <ClientItem key={user.id} id={user.id} name={`${user.name} ${user.firstName || ""}`} amount={user.mise} type={user.type} />
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="courant" className="mt-0 space-y-0">
-            {accounts.length === 0 ? (
-              <div className="py-20 text-center text-slate-400">Aucun compte courant</div>
-            ) : (
-              accounts.map((user: any) => (
-                <ClientItem key={user.id} id={user.id} name={`${user.name} ${user.firstName || ""}`} amount={user.adjustedAmount} type={user.type} />
-              ))
-            )}
-          </TabsContent>
+            <Plus className="w-5 h-5" />
+          </Button>
         </div>
-      </Tabs>
+
+        <Tabs
+          defaultValue="carte"
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
+          <TabsList className="w-full h-12 bg-muted/50 p-1">
+            <TabsTrigger value="carte" className="flex-1 h-full text-base">
+              Carte Pointage
+            </TabsTrigger>
+            <TabsTrigger value="compte" className="flex-1 h-full text-base">
+              Compte Courant
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="mt-4 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un client..."
+            className="pl-10 h-11 bg-muted/30"
+            data-testid="input-search"
+          />
+        </div>
+      </header>
+
+      <div className="p-4 space-y-3">
+        {isLoading ? (
+          <div className="text-center py-10 text-muted-foreground">
+            Chargement des clients...
+          </div>
+        ) : clients?.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground">
+            Aucun client trouvé dans cette catégorie.
+          </div>
+        ) : (
+          clients?.map((client) => (
+            <button
+              key={client.id}
+              onClick={() => setLocation(`/client/${activeTab === "carte" ? "carte-pointage" : "compte-courant"}/${client.id}`)}
+              data-testid={`card-client-${client.id}`}
+              className="w-full flex items-center gap-4 p-4 bg-card border border-card-border rounded-md hover-elevate active-elevate-2"
+            >
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                {activeTab === "carte" ? (
+                  <FileText className="w-6 h-6 text-primary" />
+                ) : (
+                  <Wallet className="w-6 h-6 text-primary" />
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-card-foreground">
+                  {client.nom} {client.prenom}
+                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{client.code}</span>
+                  <span>•</span>
+                  <span>{client.zone}</span>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+          ))
+        )}
+      </div>
     </div>
-  );
-}
-
-function ClientItem({ id, name, amount, type }: { id: string, name: string, amount: number, type: string }) {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const endpoint = type === 'carte-pointage' ? 'carte-pointages' : 'compte-courants';
-      await apiRequest("DELETE", `/api/${endpoint}/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
-      toast({ title: "Client supprimé" });
-    },
-  });
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm(`Voulez-vous vraiment supprimer le client ${name}?`)) {
-      deleteMutation.mutate();
-    }
-  };
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-4 py-6 border-b border-slate-100 last:border-0 cursor-pointer"
-      onClick={() => setLocation(`/client/${type}/${id}`)}
-    >
-      <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center shrink-0">
-        <AlertCircle className="w-6 h-6 text-white" />
-      </div>
-      <div className="flex-1 flex justify-between items-center pr-4">
-        <span className="text-lg font-medium text-slate-800">
-          {name}
-        </span>
-        <div className="flex items-center gap-4">
-          <span className="text-lg font-bold text-slate-800">
-            {amount > 0 ? amount.toLocaleString() : ""}
-          </span>
-          <button 
-            onClick={handleDelete}
-            className="p-2 hover:bg-red-50 rounded-full transition-colors"
-          >
-            <AlertCircle className="w-6 h-6 text-red-500" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
   );
 }

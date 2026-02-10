@@ -1,5 +1,4 @@
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
 import {
   CreditCard,
   Wallet,

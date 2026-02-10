@@ -1,4 +1,3 @@
-import { addSecurityLog } from "@/lib/securityLogs";
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useLocation } from "wouter";
 
@@ -26,79 +25,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (name: string, code?: string) => {
-    // ✅ ADMIN PRINCIPAL
+    // Admin Principal check
     if (name.toLowerCase() === "francisco mouanga agr") {
-      const adminData = {
-        name: "Direction AGR",
-        role: "admin",
-        agentId: "ADM-MAIN",
-      };
-
+      const adminData = { name: "Direction AGR", role: "admin", agentId: "ADM-MAIN" };
       setIsAuthenticated(true);
       setUser(adminData);
       localStorage.setItem("agro_finance_auth", JSON.stringify(adminData));
-
-      addSecurityLog({
-        date: new Date().toLocaleString(),
-        user: adminData.name,
-        type: "ACCES",
-        action: "Connexion administrateur",
-      });
-
       return true;
     }
 
-    // ✅ AGENT
+    // Agent/Admin Secondaire check (Mock for now, would use DB in real app)
+    // We search in our mock agents list (persisted in localStorage or similar)
     const savedAgents = localStorage.getItem("agro_finance_agents");
-    const agents = savedAgents
-      ? JSON.parse(savedAgents)
-      : [
-          {
-            id: 1,
-            name: "Lesly Muamba",
-            agentId: "AG-2024-001",
-            role: "agent",
-            code: "1234",
-          },
-        ];
+    const agents = savedAgents ? JSON.parse(savedAgents) : [
+      { id: 1, name: "Lesly Muamba", agentId: "AG-2024-001", role: "agent", code: "1234" }
+    ];
 
-    const foundAgent = agents.find(
-      (a: any) =>
-        (a.name.toLowerCase() === name.toLowerCase() ||
-          a.agentId === name) &&
-        a.code === code
+    const foundAgent = agents.find((a: any) => 
+      (a.name.toLowerCase() === name.toLowerCase() || a.agentId === name) && a.code === code
     );
 
     if (foundAgent) {
       setIsAuthenticated(true);
       setUser(foundAgent);
-      localStorage.setItem(
-        "agro_finance_auth",
-        JSON.stringify(foundAgent)
-      );
-
-      addSecurityLog({
-        date: new Date().toLocaleString(),
-        user: foundAgent.name,
-        type: "ACCES",
-        action: "Connexion agent",
-      });
-
+      localStorage.setItem("agro_finance_auth", JSON.stringify(foundAgent));
       return true;
     }
 
     return false;
   };
 
-  // ✅ LOGOUT
   const logout = () => {
-    addSecurityLog({
-      date: new Date().toLocaleString(),
-      user: user?.name || "Utilisateur inconnu",
-      type: "ACCES",
-      action: "Déconnexion utilisateur",
-    });
-
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem("agro_finance_auth");
@@ -114,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
