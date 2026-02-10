@@ -45,7 +45,7 @@ export default function ClientDetails() {
 
   const solderMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("PATCH", `/api/${type}s/${id}`, { status: 'solde' });
+      await apiRequest("PATCH", `/api/${type}s/${id}/status`, { status: 'solde' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
@@ -56,13 +56,12 @@ export default function ClientDetails() {
 
   const contencieuxMutation = useMutation({
     mutationFn: async () => {
-      // Pour les crédits, on change le statut directement sur l'objet crédit
-      await apiRequest("PATCH", `/api/${type}s/${id}`, { status: 'contentieux' });
+      await apiRequest("PATCH", `/api/${type}s/${id}/status`, { status: 'contentieux' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
       toast({ title: "Succès", description: "Client transféré en contentieux" });
-      setLocation("/contencieux");
+      setLocation("/contentieux");
     }
   });
 
