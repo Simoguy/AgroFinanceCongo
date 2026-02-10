@@ -12,9 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShieldCheck, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
-/* ========================= */
-/* TYPES                     */
-/* ========================= */
 type Log = {
   date: string;
   user: string;
@@ -31,17 +28,15 @@ export default function SecurityProfile() {
   const [showLogs, setShowLogs] = useState(false);
   const [logs, setLogs] = useState<Log[]>([]);
 
-  /* ========================= */
-  /* CHARGEMENT INITIAL        */
-  /* ========================= */
+  const [showReset, setShowReset] = useState(false);
+
+  // ✅ Chargement initial + log d'accès
   useEffect(() => {
     setLogs(getSecurityLogs());
     addLog("ACCES", "Accès à Sécurité & Confidentialité");
   }, []);
 
-  /* ========================= */
-  /* AJOUT DE LOG              */
-  /* ========================= */
+  // ✅ Ajouter un log
   const addLog = async (type: Log["type"], action: string) => {
     const newLog: Log = {
       date: new Date().toLocaleString(),
@@ -54,17 +49,13 @@ export default function SecurityProfile() {
     setLogs(updatedLogs);
   };
 
-  /* ========================= */
-  /* OUVERTURE DES LOGS        */
-  /* ========================= */
+  // ✅ Ouvrir / fermer les logs
   const handleOpenLogs = () => {
     setShowLogs(!showLogs);
     addLog("ACTION", "Ouverture de la traçabilité");
   };
 
-  /* ========================= */
-  /* SUPPRESSION DES LOGS      */
-  /* ========================= */
+  // ✅ Vider logs (ADMIN)
   const handleClearLogs = async () => {
     if (!window.confirm("Voulez-vous vraiment supprimer tous les logs ?")) return;
 
@@ -81,9 +72,7 @@ export default function SecurityProfile() {
     setLogs(updatedLogs);
   };
 
-  /* ========================= */
-  /* COULEUR DES BADGES        */
-  /* ========================= */
+  // ✅ Badge couleur
   const badgeVariant = (type: Log["type"]) => {
     switch (type) {
       case "ACCES":
@@ -99,24 +88,55 @@ export default function SecurityProfile() {
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
-      {/* ========================= */}
-      {/* TITRE                    */}
-      {/* ========================= */}
       <header className="flex items-center gap-2">
         <ShieldCheck className="w-6 h-6 text-primary" />
         <h1 className="text-2xl font-bold">Sécurité & Confidentialité</h1>
       </header>
 
-      {/* ========================= */}
-      {/* BOUTON LOGS               */}
-      {/* ========================= */}
+      {/* ============================ */}
+      {/* BOUTONS */}
+      {/* ============================ */}
       <Button onClick={handleOpenLogs}>
         Traçabilité / Logs
       </Button>
 
-      {/* ========================= */}
-      {/* AFFICHAGE DES LOGS        */}
-      {/* ========================= */}
+      <Button
+        variant="destructive"
+        onClick={() => setShowReset(!showReset)}
+      >
+        Réinitialiser le compte utilisateur
+      </Button>
+
+      {/* ============================ */}
+      {/* CARTE RÉINITIALISER */}
+      {/* ============================ */}
+      {showReset && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-destructive">
+              Réinitialiser le compte utilisateur
+            </CardTitle>
+            <Badge variant="destructive">ADMIN</Badge>
+          </CardHeader>
+
+          <CardContent>
+            <ScrollArea className="h-40 pr-2">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Cette fonctionnalité permettra de réinitialiser le compte de l’utilisateur.
+                </p>
+                <Button variant="destructive" size="sm">
+                  Confirmer la réinitialisation
+                </Button>
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ============================ */}
+      {/* CARTE LOGS */}
+      {/* ============================ */}
       {showLogs && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -159,23 +179,6 @@ export default function SecurityProfile() {
           </CardContent>
         </Card>
       )}
-
-      {/* ========================= */}
-      {/* NOUVELLE SECTION          */}
-      {/* ========================= */}
-      <Card className="border-destructive/40">
-        <CardHeader>
-          <CardTitle className="text-destructive">
-            Réinitialiser le compte utilisateur
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Fonctionnalité à venir.
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

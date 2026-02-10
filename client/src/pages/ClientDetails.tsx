@@ -24,7 +24,7 @@ export default function ClientDetails() {
 
   const { data: remboursements = [] } = useQuery<Remboursement[]>({
     queryKey: ["/api/credits", id, "remboursements"],
-    enabled: !!id,
+    enabled: !!id && type === "credit",
   });
 
   const mutation = useMutation({
@@ -56,11 +56,12 @@ export default function ClientDetails() {
 
   const contencieuxMutation = useMutation({
     mutationFn: async () => {
+      // Pour les crédits, on change le statut directement sur l'objet crédit
       await apiRequest("PATCH", `/api/${type}s/${id}`, { status: 'contentieux' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
-      toast({ title: "Succès", description: "Client en contentieux" });
+      toast({ title: "Succès", description: "Client transféré en contentieux" });
       setLocation("/contencieux");
     }
   });
