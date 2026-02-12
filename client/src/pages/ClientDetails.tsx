@@ -86,6 +86,12 @@ export default function ClientDetails() {
   const isCompteCourant = type === "compte-courant";
   const isPointage = type === "carte-pointage";
 
+  // For Epargne (Pointage / Compte Courant) transactions
+  const { data: epargneTransactions = [] } = useQuery<Remboursement[]>({
+    queryKey: [`/api/${type}s`, id, "transactions"],
+    enabled: isPointage || isCompteCourant,
+  });
+
   if (isCredit) {
     const c = client as Credit;
     const baseAmount = 30000;
@@ -308,13 +314,57 @@ export default function ClientDetails() {
 
         <div className="bg-[#eeeeee] rounded-[2rem] p-8 shadow-sm relative min-h-[140px] flex flex-col justify-center">
           <div className="flex justify-between items-center w-full">
-            <span className="text-xl font-black text-slate-800">{isPointage ? 'Versements' : 'Solde'}</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-black text-slate-800">{isPointage ? 'Versements' : 'Solde'}</span>
+              {isPointage && (
+                <div 
+                  className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                  onClick={() => setActiveTab(activeTab === 'versements' ? null : 'versements')}
+                >
+                  NOMBRE DE VERSEMENTS EFFECTUÉS: {epargneTransactions.filter(t => t.type === 'versement').length}
+                  <span className="text-[10px] text-primary">(VOIR LISTE)</span>
+                </div>
+              )}
+            </div>
             <span className="text-2xl font-black text-[#4caf50]">
               {solde.toLocaleString()}
             </span>
           </div>
           <p className="absolute bottom-6 right-8 text-[10px] font-bold text-slate-400">XAF</p>
         </div>
+
+        <AnimatePresence>
+          {isPointage && activeTab === 'versements' && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-white rounded-3xl p-4 shadow-sm space-y-2 max-h-60 overflow-y-auto">
+                <div className="flex justify-between items-center px-2 mb-2">
+                  <h4 className="text-sm font-bold text-slate-500 uppercase">
+                    Historique des versements
+                  </h4>
+                  <button onClick={() => setActiveTab(null)} className="p-1">
+                    <X className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+                {epargneTransactions.filter(t => t.type === 'versement').map(t => (
+                  <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl">
+                    <span className="text-xs text-slate-500">{format(new Date(t.date), 'dd/MM/yyyy')}</span>
+                    <span className="font-bold text-green-600">
+                      {Number(t.montant).toLocaleString()} XAF
+                    </span>
+                  </div>
+                ))}
+                {epargneTransactions.filter(t => t.type === 'versement').length === 0 && (
+                  <p className="text-center py-4 text-slate-400 italic">Aucun versement trouvé</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="pt-4 flex flex-col gap-3">
           <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-md" onClick={() => {

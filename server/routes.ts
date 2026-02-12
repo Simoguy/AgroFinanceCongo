@@ -190,6 +190,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/carte-pointages/:id/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getRemboursements(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  app.get("/api/compte-courants/:id/transactions", async (req, res) => {
+    try {
+      const transactions = await storage.getRemboursements(req.params.id);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
   app.post("/api/credits/:id/remboursements", async (req, res) => {
     try {
       const reimbursement = await storage.createRemboursement(req.body);
