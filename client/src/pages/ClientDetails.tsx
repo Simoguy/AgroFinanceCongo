@@ -18,51 +18,18 @@ export default function ClientDetails() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'versements' | 'penalites' | 'retraits' | null>(null);
 
-  const { data: client, isLoading } = useQuery<Credit | CompteCourant | CartePointage>({
+  const { data: client, isLoading } = useQuery<any>({
     queryKey: [`/api/${type}s`, id],
   });
 
   const { data: remboursements = [] } = useQuery<Remboursement[]>({
     queryKey: ["/api/credits", id, "remboursements"],
-    enabled: !!id,
+    enabled: type === "credit",
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: { montant: number, type: string }) => {
-      const endpoint = type === "credit" ? `/api/credits/${id}/remboursements` : `/api/${type}s/${id}/transactions`;
-      const res = await apiRequest("POST", endpoint, {
-        montant: data.montant.toString(),
-        type: data.type,
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
-      queryClient.invalidateQueries({ queryKey: ["/api/credits", id, "remboursements"] });
-      toast({ title: "Succès", description: "Opération enregistrée" });
-    }
-  });
-
-  const solderMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("PATCH", `/api/${type}s/${id}`, { status: 'solde' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
-      toast({ title: "Succès", description: "Compte soldé" });
-      setLocation("/solde");
-    }
-  });
-
-  const contencieuxMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("PATCH", `/api/${type}s/${id}`, { status: 'contentieux' });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
-      toast({ title: "Succès", description: "Client en contentieux" });
-      setLocation("/contencieux");
-    }
+  const { data: epargneTransactions = [] } = useQuery<Remboursement[]>({
+    queryKey: [`/api/${type}s`, id, "transactions"],
+    enabled: type === "carte-pointage" || type === "compte-courant",
   });
 
   if (isLoading) {
@@ -86,10 +53,45 @@ export default function ClientDetails() {
   const isCompteCourant = type === "compte-courant";
   const isPointage = type === "carte-pointage";
 
-  // For Epargne (Pointage / Compte Courant) transactions
-  const { data: epargneTransactions = [] } = useQuery<Remboursement[]>({
-    queryKey: [`/api/${type}s`, id, "transactions"],
-    enabled: isPointage || isCompteCourant,
+  const mutation = useMutation({
+    mutationFn: async (data: { montant: number, type: string }) => {
+      const endpoint = type === "credit" ? `/api/credits/${id}/remboursements` : `/api/${type}s/${id}/transactions`;
+      const res = await apiRequest("POST", endpoint, {
+        montant: data.montant.toString(),
+        type: data.type,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/credits", id, "remboursements"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id, "transactions"] });
+      toast({ title: "Succès", description: "Opération enregistrée" });
+    }
+  });
+
+  const solderMutation = useMutation({
+    mutationFn: async () => {
+      const endpoint = type === "credit" ? `/api/credits/${id}/status` : `/api/${type}s/${id}/status`;
+      await apiRequest("PATCH", endpoint, { status: 'solde' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      toast({ title: "Succès", description: "Compte soldé" });
+      setLocation("/solde");
+    }
+  });
+
+  const contencieuxMutation = useMutation({
+    mutationFn: async () => {
+      const endpoint = type === "credit" ? `/api/credits/${id}/status` : `/api/${type}s/${id}/status`;
+      await apiRequest("PATCH", endpoint, { status: 'contentieux' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      toast({ title: "Succès", description: "Client en contentieux" });
+      setLocation("/contencieux");
+    }
   });
 
   if (isCredit) {
