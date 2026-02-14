@@ -316,13 +316,13 @@ export default function ClientDetails() {
           <div className="flex justify-between items-center w-full">
             <div className="flex flex-col">
               <span className="text-xl font-black text-slate-800">{isPointage ? 'Versements' : 'Solde'}</span>
-              {isPointage && (
+              {(isPointage || isCompteCourant) && (
                 <div 
                   className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
                   onClick={() => setActiveTab(activeTab === 'versements' ? null : 'versements')}
                 >
-                  NOMBRE DE VERSEMENTS EFFECTUÉS: {epargneTransactions.filter(t => t.type === 'versement').length}
-                  <span className="text-[10px] text-primary">(VOIR LISTE)</span>
+                  Nombre de versement effectuer: {epargneTransactions.filter(t => t.type === 'versement').length}
+                  <span className="text-[10px] text-primary uppercase">(Ouvir liste de versements)</span>
                 </div>
               )}
             </div>
@@ -334,7 +334,7 @@ export default function ClientDetails() {
         </div>
 
         <AnimatePresence>
-          {isPointage && activeTab === 'versements' && (
+          {(isPointage || isCompteCourant) && activeTab === 'versements' && (
             <motion.div 
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -373,12 +373,14 @@ export default function ClientDetails() {
           }}>
             EFFECTUER UN VERSEMENT
           </Button>
-          <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight shadow-sm" onClick={() => {
-            const amount = prompt("Montant du retrait ?");
-            if (amount) mutation.mutate({ montant: Number(amount), type: "retrait" });
-          }}>
-            EFFECTUER UN RETRAIT
-          </Button>
+          {!isPointage && (
+            <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight shadow-sm" onClick={() => {
+              const amount = prompt("Montant du retrait ?");
+              if (amount) mutation.mutate({ montant: Number(amount), type: "retrait" });
+            }}>
+              EFFECTUER UN RETRAIT
+            </Button>
+          )}
           <Button onClick={() => solderMutation.mutate()} variant="secondary" className="w-full h-16 rounded-[1.5rem] font-bold text-red-600 uppercase shadow-sm">Solder le compte</Button>
         </div>
       </div>
