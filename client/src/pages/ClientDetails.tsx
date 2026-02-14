@@ -267,7 +267,7 @@ export default function ClientDetails() {
   }
 
   // Épargne Details (Pointage / Compte Courant)
-  const e = client as (CartePointage | CompteCourant);
+  const e = client as any;
   const initialMise = Number(e.montant || 0);
   const accountFee = isCompteCourant ? 5000 : 0;
   const solde = Math.max(0, initialMise - accountFee);
