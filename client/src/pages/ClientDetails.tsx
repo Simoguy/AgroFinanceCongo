@@ -314,19 +314,10 @@ export default function ClientDetails() {
           </div>
         </div>
 
-        <div className="bg-[#eeeeee] rounded-[2rem] p-8 shadow-sm relative min-h-[140px] flex flex-col justify-center">
+        <div className="bg-[#eeeeee] rounded-[2rem] p-8 shadow-sm relative min-h-[140px] flex flex-col justify-center mb-8">
           <div className="flex justify-between items-center w-full">
             <div className="flex flex-col">
               <span className="text-xl font-black text-slate-800">{isPointage ? 'Versements' : 'Solde'}</span>
-              {(isPointage || isCompteCourant) && (
-                <div 
-                  className="text-xs font-bold text-slate-500 mt-1 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => setActiveTab(activeTab === 'versements' ? null : 'versements')}
-                >
-                  Nombre de versement effectuer: {epargneTransactions.filter(t => t.type === 'versement').length}
-                  <span className="text-[10px] text-primary uppercase">(Ouvir liste de versements)</span>
-                </div>
-              )}
             </div>
             <span className="text-2xl font-black text-[#4caf50]">
               {solde.toLocaleString()}
@@ -334,6 +325,20 @@ export default function ClientDetails() {
           </div>
           <p className="absolute bottom-6 right-8 text-[10px] font-bold text-slate-400">XAF</p>
         </div>
+
+        {(isPointage || isCompteCourant) && (
+          <div className="flex flex-col items-center gap-6 mt-4 mb-8">
+            <p className="text-base font-bold text-slate-800">
+              Nombre de versement effectuer: {epargneTransactions.filter(t => t.type === 'versement').length}
+            </p>
+            <button 
+              className="text-lg font-medium text-slate-400 hover:text-primary transition-colors"
+              onClick={() => setActiveTab(activeTab === 'versements' ? null : 'versements')}
+            >
+              Ouvir liste de versements
+            </button>
+          </div>
+        )}
 
         <AnimatePresence>
           {(isPointage || isCompteCourant) && activeTab === 'versements' && (
