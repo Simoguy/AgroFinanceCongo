@@ -29,6 +29,7 @@ import { SyncManager } from "@/lib/syncManager";
 
 const formSchema = insertCompteCourantSchema.extend({
   dateCreation: z.string().min(1, "La date de création est requise"),
+  montant: z.string().min(1, "La mise est requise"),
 });
 
 const zones = [
@@ -72,6 +73,7 @@ export default function AddCompteCourant() {
       activite: "",
       adresse: "",
       zone: "",
+      montant: "",
       dateCreation: "",
       code: "",
       agentId: user?.agentId || "default-agent",
@@ -281,6 +283,26 @@ export default function AddCompteCourant() {
                 Généré automatiquement
               </p>
             </div>
+
+            <FormField
+              control={form.control}
+              name="montant"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mise (Limite Compte Courant)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 5000"
+                      className="h-12"
+                      data-testid="input-montant"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

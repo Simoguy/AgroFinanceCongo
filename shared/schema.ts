@@ -62,6 +62,7 @@ export const compteCourants = pgTable("compte_courants", {
   activite: text("activite").notNull(),
   adresse: text("adresse").notNull(),
   zone: text("zone").notNull(),
+  montant: numeric("montant").notNull().default("0"),
   dateCreation: timestamp("date_creation").notNull(),
   status: text("status").notNull().default("actif"),
   agentId: varchar("agent_id").notNull(),
@@ -109,6 +110,7 @@ export const insertCompteCourantSchema = createInsertSchema(compteCourants).omit
   status: true,
 }).extend({
   dateCreation: dateSchema,
+  montant: z.string().or(z.number()),
 });
 export const insertCartePointageSchema = createInsertSchema(cartePointages).omit({ 
   id: true, 
