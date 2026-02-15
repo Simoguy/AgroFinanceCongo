@@ -32,27 +32,6 @@ export default function ClientDetails() {
     enabled: type === "carte-pointage" || type === "compte-courant",
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!client) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p>Client introuvable</p>
-        <Button onClick={() => setLocation("/")}>Retour à l'accueil</Button>
-      </div>
-    );
-  }
-
-  const isCredit = type === "credit";
-  const isCompteCourant = type === "compte-courant";
-  const isPointage = type === "carte-pointage";
-
   const mutation = useMutation({
     mutationFn: async (data: { montant: number, type: string }) => {
       const endpoint = type === "credit" ? `/api/credits/${id}/remboursements` : `/api/${type}s/${id}/transactions`;
@@ -93,6 +72,27 @@ export default function ClientDetails() {
       setLocation("/contencieux");
     }
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!client) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p>Client introuvable</p>
+        <Button onClick={() => setLocation("/")}>Retour à l'accueil</Button>
+      </div>
+    );
+  }
+
+  const isCredit = type === "credit";
+  const isCompteCourant = type === "compte-courant";
+  const isPointage = type === "carte-pointage";
 
   if (isCredit) {
     const c = client as Credit;
