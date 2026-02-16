@@ -75,6 +75,18 @@ export default function ClientDetails() {
     }
   });
 
+  const reactivateMutation = useMutation({
+    mutationFn: async () => {
+      const endpoint = type === "credit" ? `/api/credits/${id}/status` : `/api/${type}s/${id}/status`;
+      await apiRequest("PATCH", endpoint, { status: 'actif' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      toast({ title: "Succès", description: "Client réactivé" });
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -248,22 +260,38 @@ export default function ClientDetails() {
           </div>
 
           <div className="pt-4 flex flex-col gap-3">
-            <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-lg" onClick={() => {
-              const amount = prompt("Montant du versement ?");
-              if (amount) mutation.mutate({ montant: Number(amount), type: "versement" });
-            }}>
-              Effectuer Versement
-            </Button>
-            <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-2 border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight" onClick={() => {
-              const amount = prompt("Montant de la pénalité ?");
-              if (amount) mutation.mutate({ montant: Number(amount), type: "penalite" });
-            }}>
-              Appliquer Pénalité
-            </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button onClick={() => contencieuxMutation.mutate()} variant="secondary" className="h-14 rounded-2xl font-bold text-red-600">CONTENTIEUX</Button>
-              <Button onClick={() => solderMutation.mutate()} variant="secondary" className="h-14 rounded-2xl font-bold text-green-600">SOLDER</Button>
-            </div>
+            {client.status === 'solde' ? (
+              <>
+                <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-lg" onClick={() => {
+                  const path = type === 'credit' ? '/add-credit' : (type === 'compte-courant' ? '/add-compte-courant' : '/add-carte-pointage');
+                  setLocation(path);
+                }}>
+                  Recréer le compte
+                </Button>
+                <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-2 border-primary text-primary text-lg font-bold uppercase tracking-tight" onClick={() => reactivateMutation.mutate()}>
+                  Renvoyer aux actifs
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-lg" onClick={() => {
+                  const amount = prompt("Montant du versement ?");
+                  if (amount) mutation.mutate({ montant: Number(amount), type: "versement" });
+                }}>
+                  Effectuer Versement
+                </Button>
+                <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-2 border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight" onClick={() => {
+                  const amount = prompt("Montant de la pénalité ?");
+                  if (amount) mutation.mutate({ montant: Number(amount), type: "penalite" });
+                }}>
+                  Appliquer Pénalité
+                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button onClick={() => contencieuxMutation.mutate()} variant="secondary" className="h-14 rounded-2xl font-bold text-red-600">CONTENTIEUX</Button>
+                  <Button onClick={() => solderMutation.mutate()} variant="secondary" className="h-14 rounded-2xl font-bold text-green-600">SOLDER</Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -376,21 +404,37 @@ export default function ClientDetails() {
         </AnimatePresence>
 
         <div className="pt-4 flex flex-col gap-3">
-          <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-md" onClick={() => {
-            const amount = prompt("Montant du versement ?");
-            if (amount) mutation.mutate({ montant: Number(amount), type: "versement" });
-          }}>
-            EFFECTUER UN VERSEMENT
-          </Button>
-          {!isPointage && (
-            <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight shadow-sm" onClick={() => {
-              const amount = prompt("Montant du retrait ?");
-              if (amount) mutation.mutate({ montant: Number(amount), type: "retrait" });
-            }}>
-              EFFECTUER UN RETRAIT
-            </Button>
+          {client.status === 'solde' ? (
+            <>
+              <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-lg" onClick={() => {
+                const path = type === 'compte-courant' ? '/add-compte-courant' : '/add-carte-pointage';
+                setLocation(path);
+              }}>
+                Recréer le compte
+              </Button>
+              <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-2 border-primary text-primary text-lg font-bold uppercase tracking-tight" onClick={() => reactivateMutation.mutate()}>
+                Renvoyer aux actifs
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button className="w-full h-16 rounded-[1.5rem] bg-[#1976d2] text-white text-lg font-bold uppercase tracking-tight shadow-md" onClick={() => {
+                const amount = prompt("Montant du versement ?");
+                if (amount) mutation.mutate({ montant: Number(amount), type: "versement" });
+              }}>
+                EFFECTUER UN VERSEMENT
+              </Button>
+              {!isPointage && (
+                <Button variant="outline" className="w-full h-16 rounded-[1.5rem] border-red-200 text-red-500 text-lg font-bold uppercase tracking-tight shadow-sm" onClick={() => {
+                  const amount = prompt("Montant du retrait ?");
+                  if (amount) mutation.mutate({ montant: Number(amount), type: "retrait" });
+                }}>
+                  EFFECTUER UN RETRAIT
+                </Button>
+              )}
+              <Button onClick={() => solderMutation.mutate()} variant="secondary" className="w-full h-16 rounded-[1.5rem] font-bold text-red-600 uppercase shadow-sm">Solder le compte</Button>
+            </>
           )}
-          <Button onClick={() => solderMutation.mutate()} variant="secondary" className="w-full h-16 rounded-[1.5rem] font-bold text-red-600 uppercase shadow-sm">Solder le compte</Button>
         </div>
       </div>
     </div>
