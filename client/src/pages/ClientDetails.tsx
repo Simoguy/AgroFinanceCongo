@@ -55,6 +55,7 @@ export default function ClientDetails() {
       await apiRequest("PATCH", endpoint, { status: 'solde' });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
       toast({ title: "Succès", description: "Compte soldé" });
       setLocation("/solde");
@@ -67,6 +68,7 @@ export default function ClientDetails() {
       await apiRequest("PATCH", endpoint, { status: 'contentieux' });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/${type}s`] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
       toast({ title: "Succès", description: "Client en contentieux" });
       setLocation("/contencieux");
