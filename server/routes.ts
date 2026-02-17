@@ -236,16 +236,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/admin/logs", async (req, res) => {
+    const logData = {
+      ...req.body,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    };
+
     try {
-      const logData = {
-        ...req.body,
-        ipAddress: req.ip,
-        userAgent: req.headers["user-agent"],
-      };
       const log = await storage.createLog(logData);
       res.status(201).json(log);
     } catch (error) {
-      res.status(400).json({ error: "Failed to create log" });
+      console.error("Failed to persist admin log:", error);
+
+      // Logging must never break the user workflow.
+      // Return an accepted fallback payload so fire-and-forget client calls
+      // don't trigger runtime error overlays.
+      res.status(202).json({
+        ...logData,
+        id: null,
+        timestamp: new Date().toISOString(),
+        stored: false,
+      });
     }
   });
 
