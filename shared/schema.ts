@@ -121,6 +121,27 @@ export const insertCartePointageSchema = createInsertSchema(cartePointages).omit
   dateCreation: dateSchema,
 });
 
+export const logs = pgTable("logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  action: text("action").notNull(),
+  details: text("details"),
+  agentId: varchar("agent_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  role: text("role").notNull(),
+  agence: text("agence").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").notNull().default(sql`now()`),
+});
+
+export const insertLogSchema = createInsertSchema(logs).omit({ 
+  id: true,
+  timestamp: true 
+});
+
+export type Log = typeof logs.$inferSelect;
+export type InsertLog = z.infer<typeof insertLogSchema>;
+
 export type InsertAgent = z.infer<typeof insertAgentSchema>;
 export type Agent = typeof agents.$inferSelect;
 export type InsertCredit = z.infer<typeof insertCreditSchema>;

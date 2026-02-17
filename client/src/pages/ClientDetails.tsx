@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Credit, CompteCourant, CartePointage, Remboursement } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -16,6 +17,7 @@ export default function ClientDetails() {
   const [, setLocation] = useLocation();
   const { type, id } = params || {};
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'versements' | 'penalites' | 'retraits' | null>(null);
 
   const { data: client, isLoading } = useQuery<any>({
@@ -39,12 +41,24 @@ export default function ClientDetails() {
         montant: data.montant.toString(),
         type: data.type,
       });
-      return res.json();
+      return { response: await res.json(), mutationData: data };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      const { mutationData } = result;
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
       queryClient.invalidateQueries({ queryKey: ["/api/credits", id, "remboursements"] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id, "transactions"] });
+      
+      // Log the action
+      apiRequest("POST", "/api/admin/logs", {
+        action: type === "credit" ? "Remboursement Crédit" : "Transaction Épargne",
+        details: `${mutationData.type.toUpperCase()}: ${mutationData.montant.toLocaleString()} XAF pour le compte ${client.code}`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: client.zone || "---",
+      });
+
       toast({ title: "Succès", description: "Opération enregistrée" });
     }
   });
@@ -57,6 +71,17 @@ export default function ClientDetails() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+
+      // Log the action
+      apiRequest("POST", "/api/admin/logs", {
+        action: "Clôture de compte",
+        details: `Compte ${client.code} soldé`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: client.zone || "---",
+      });
+
       toast({ title: "Succès", description: "Compte soldé" });
       setLocation("/solde");
     }
@@ -70,6 +95,17 @@ export default function ClientDetails() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+
+      // Log the action
+      apiRequest("POST", "/api/admin/logs", {
+        action: "Transfert Contentieux",
+        details: `Client ${client.nom} ${client.prenom} (${client.code}) transféré au contentieux`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: client.zone || "---",
+      });
+
       toast({ title: "Succès", description: "Client en contentieux" });
       setLocation("/contencieux");
     }

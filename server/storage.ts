@@ -13,10 +13,13 @@ import {
   credits,
   compteCourants,
   cartePointages,
-  remboursements
+  remboursements,
+  logs,
+  type Log,
+  type InsertLog
 } from "@shared/schema";
 import { db } from "./db.js";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
@@ -43,9 +46,21 @@ export interface IStorage {
   getRemboursements(creditId: string): Promise<Remboursement[]>;
   createRemboursement(remboursement: InsertRemboursement): Promise<Remboursement>;
   getRecentTransactions(limit?: number): Promise<any[]>;
+  
+  createLog(log: InsertLog): Promise<Log>;
+  getLogs(limit?: number): Promise<Log[]>;
 }
 
 export class DatabaseStorage implements IStorage {
+  async createLog(insertLog: InsertLog): Promise<Log> {
+    const [log] = await db.insert(logs).values(insertLog).returning();
+    return log;
+  }
+
+  async getLogs(limit: number = 50): Promise<Log[]> {
+    return await db.select().from(logs).orderBy(desc(logs.timestamp)).limit(limit);
+  }
+
   async getRecentTransactions(limit: number = 20): Promise<any[]> {
     return await db.select()
       .from(remboursements)

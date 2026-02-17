@@ -20,10 +20,10 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCreditSchema } from "@shared/schema";
+import { insertCreditSchema, type Credit } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
 import { SyncManager } from "@/lib/syncManager";
 
@@ -113,6 +113,17 @@ export default function AddCredit() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
+
+      // Log the action
+      apiRequest("POST", "/api/admin/logs", {
+        action: "Création Crédit",
+        details: `Nouveau crédit créé: ${codeCompte} pour ${form.getValues().nom} ${form.getValues().prenom}`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: form.getValues().zone || "---",
+      });
+
       toast({
         title: "Succès",
         description: data.offline ? "Enregistré localement (en attente de connexion)" : "Crédit créé avec succès",

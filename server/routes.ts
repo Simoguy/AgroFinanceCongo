@@ -226,6 +226,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/admin/logs", async (req, res) => {
+    try {
+      const logs = await storage.getLogs(50);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch logs" });
+    }
+  });
+
+  app.post("/api/admin/logs", async (req, res) => {
+    try {
+      const logData = {
+        ...req.body,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      };
+      const log = await storage.createLog(logData);
+      res.status(201).json(log);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create log" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

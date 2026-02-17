@@ -20,10 +20,10 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCartePointageSchema } from "@shared/schema";
+import { insertCartePointageSchema, type CartePointage } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
 import { SyncManager } from "@/lib/syncManager";
 
@@ -111,6 +111,17 @@ export default function AddCartePointage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
+
+      // Log the action
+      apiRequest("POST", "/api/admin/logs", {
+        action: "Création Carte Pointage",
+        details: `Nouvelle carte de pointage créée: ${codeCompte} pour ${form.getValues().nom} ${form.getValues().prenom}`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: form.getValues().zone || "---",
+      });
+
       toast({
         title: "Succès",
         description: data.offline ? "Enregistré localement (en attente de connexion)" : "Carte de pointage créée avec succès",
