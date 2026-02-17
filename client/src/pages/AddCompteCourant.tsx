@@ -112,12 +112,13 @@ export default function AddCompteCourant() {
 
       // Log the action
       apiRequest("POST", "/api/admin/logs", {
-        action: "Création Compte Courant",
+        action: "Ouverture compte (Compte Courant)",
         details: `Nouveau compte courant créé: ${codeCompte} pour ${form.getValues().nom} ${form.getValues().prenom}`,
         agentId: user?.agentId || "---",
         agentName: user?.name || "Agent",
         role: user?.role || "agent",
         agence: form.getValues().zone || "---",
+        newValue: `Client: ${form.getValues().nom} ${form.getValues().prenom}, Code: ${codeCompte}, Mise: ${form.getValues().montant} XAF`,
       });
 
       toast({

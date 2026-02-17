@@ -114,12 +114,13 @@ export default function AddCartePointage() {
 
       // Log the action
       apiRequest("POST", "/api/admin/logs", {
-        action: "Création Carte Pointage",
-        details: `Nouvelle carte de pointage créée: ${codeCompte} pour ${form.getValues().nom} ${form.getValues().prenom}`,
+        action: "Ouverture compte (Carte Pointage)",
+        details: `Nouveau compte créé: ${form.getValues().code} pour ${form.getValues().nom} ${form.getValues().prenom}`,
         agentId: user?.agentId || "---",
         agentName: user?.name || "Agent",
         role: user?.role || "agent",
         agence: form.getValues().zone || "---",
+        newValue: `Client: ${form.getValues().nom} ${form.getValues().prenom}, Code: ${form.getValues().code}`,
       });
 
       toast({

@@ -131,6 +131,8 @@ export const logs = pgTable("logs", {
   agence: text("agence").notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
   timestamp: timestamp("timestamp").notNull().default(sql`now()`),
 });
 

@@ -49,14 +49,20 @@ export default function ClientDetails() {
       queryClient.invalidateQueries({ queryKey: ["/api/credits", id, "remboursements"] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id, "transactions"] });
       
-      // Log the action
+      // Log the action with before/after data if applicable
+      const actionName = type === "credit" ? "Paiement crédit" : (mutationData.type === "versement" ? "Dépôt" : "Retrait");
+      const currentSolde = Number(client.solde || 0);
+      const nextSolde = mutationData.type === "retrait" ? (currentSolde - mutationData.montant) : (currentSolde + mutationData.montant);
+
       apiRequest("POST", "/api/admin/logs", {
-        action: type === "credit" ? "Remboursement Crédit" : "Transaction Épargne",
+        action: actionName,
         details: `${mutationData.type.toUpperCase()}: ${mutationData.montant.toLocaleString()} XAF pour le compte ${client.code}`,
         agentId: user?.agentId || "---",
         agentName: user?.name || "Agent",
         role: user?.role || "agent",
         agence: client.zone || "---",
+        oldValue: `Solde: ${currentSolde.toLocaleString()} XAF`,
+        newValue: `Solde: ${nextSolde.toLocaleString()} XAF`,
       });
 
       toast({ title: "Succès", description: "Opération enregistrée" });
@@ -74,12 +80,14 @@ export default function ClientDetails() {
 
       // Log the action
       apiRequest("POST", "/api/admin/logs", {
-        action: "Clôture de compte",
+        action: "Solder le compte",
         details: `Compte ${client.code} soldé`,
         agentId: user?.agentId || "---",
         agentName: user?.name || "Agent",
         role: user?.role || "agent",
         agence: client.zone || "---",
+        oldValue: "Statut: ACTIF",
+        newValue: "Statut: SOLDÉ",
       });
 
       toast({ title: "Succès", description: "Compte soldé" });
@@ -104,6 +112,8 @@ export default function ClientDetails() {
         agentName: user?.name || "Agent",
         role: user?.role || "agent",
         agence: client.zone || "---",
+        oldValue: "Statut: ACTIF",
+        newValue: "Statut: CONTENTIEUX",
       });
 
       toast({ title: "Succès", description: "Client en contentieux" });
@@ -119,6 +129,19 @@ export default function ClientDetails() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`] });
       queryClient.invalidateQueries({ queryKey: [`/api/${type}s`, id] });
+      
+      // Log reactivation
+      apiRequest("POST", "/api/admin/logs", {
+        action: "Réactivation de compte",
+        details: `Compte ${client.code} réactivé`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: client.zone || "---",
+        oldValue: `Statut: ${client.status?.toUpperCase()}`,
+        newValue: "Statut: ACTIF",
+      });
+
       toast({ title: "Succès", description: "Client réactivé" });
     }
   });

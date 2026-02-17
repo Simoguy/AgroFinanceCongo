@@ -116,12 +116,13 @@ export default function AddCredit() {
 
       // Log the action
       apiRequest("POST", "/api/admin/logs", {
-        action: "Création Crédit",
-        details: `Nouveau crédit créé: ${codeCompte} pour ${form.getValues().nom} ${form.getValues().prenom}`,
+        action: "Crédit accordé",
+        details: `Nouveau crédit accordé: ${codeCompte} pour ${form.getValues().nom} ${form.getValues().prenom}`,
         agentId: user?.agentId || "---",
         agentName: user?.name || "Agent",
         role: user?.role || "agent",
         agence: form.getValues().zone || "---",
+        newValue: `Code: ${codeCompte}, Montant: 30000 XAF, Comptes: ${form.getValues().nombreCompte}`,
       });
 
       toast({

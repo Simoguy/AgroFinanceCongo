@@ -8,10 +8,8 @@ import { format } from "date-fns";
 export default function AdminLogs() {
   const [, setLocation] = useLocation();
 
-  // For now, we'll mock the logs since we don't have a specific logs table yet
-  // but we can show the recent transactions as a form of log
-  const { data: transactions = [] } = useQuery<any[]>({ 
-    queryKey: ["/api/transactions/recent"] 
+  const { data: logs = [] } = useQuery<any[]>({ 
+    queryKey: ["/api/admin/logs"] 
   });
 
   return (
@@ -36,35 +34,56 @@ export default function AdminLogs() {
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <History className="w-4 h-4" />
-            <span className="text-sm font-medium">Activités Récentes</span>
+            <span className="text-sm font-medium">Activités Systèmes</span>
           </div>
 
           <div className="space-y-3">
-            {transactions.length === 0 ? (
+            {logs.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center text-muted-foreground italic">
-                  Aucune activité récente enregistrée
+                  Aucun log enregistré
                 </CardContent>
               </Card>
             ) : (
-              transactions.map((log: any) => (
+              logs.map((log: any) => (
                 <Card key={log.id}>
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div className="space-y-1">
-                      <p className="font-medium text-foreground capitalize">
-                        {log.type} - {log.montant.toLocaleString()} XAF
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Agent: {log.agentId} | Client ID: {log.creditId || log.compteCourantId || log.cartePointageId}
-                      </p>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1 flex-1">
+                        <p className="font-bold text-foreground">
+                          {log.action}
+                        </p>
+                        <p className="text-sm text-muted-foreground italic">
+                          {log.details}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-xs font-bold text-primary whitespace-nowrap">
+                          {format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm:ss (XXX)')}
+                        </p>
+                        <Badge variant="outline" className="text-[10px] mt-1">
+                          {log.role}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs font-medium text-slate-500">
-                        {format(new Date(log.date), 'dd/MM/yyyy')}
-                      </p>
-                      <p className="text-[10px] text-slate-400">
-                        {format(new Date(log.date), 'HH:mm')}
-                      </p>
+                    
+                    {log.oldValue && log.newValue && (
+                      <div className="bg-muted/50 p-2 rounded-md border border-dashed text-[11px] font-mono">
+                        <span className="text-muted-foreground line-through">{log.oldValue}</span>
+                        <span className="mx-2 text-primary">→</span>
+                        <span className="text-foreground font-bold">{log.newValue}</span>
+                      </div>
+                    )}
+                    
+                    <div className="pt-2 border-t grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="space-y-1">
+                        <p><span className="font-bold">Utilisateur:</span> {log.agentName} ({log.agentId})</p>
+                        <p><span className="font-bold">Agence:</span> {log.agence}</p>
+                      </div>
+                      <div className="space-y-1 text-right">
+                        <p><span className="font-bold">IP:</span> {log.ipAddress}</p>
+                        <p className="truncate"><span className="font-bold">Appareil:</span> {log.userAgent}</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
