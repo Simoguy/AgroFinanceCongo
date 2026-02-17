@@ -5,37 +5,22 @@ import { motion } from "framer-motion";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
 
 export default function Contentieux() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
   const { data: users = [], isLoading } = useUsers();
 
   const clients = users.filter((u: any) => u.isContencieux);
 
   const deleteMutation = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+    mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/credits/${id}`);
-      return { id, name };
     },
-    onSuccess: ({ name }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
-
-      apiRequest("POST", "/api/admin/logs", {
-        action: "Suppression client",
-        details: `Client ${name} supprimé depuis l'écran Contentieux`,
-        agentId: user?.agentId || "---",
-        agentName: user?.name || "Agent",
-        role: user?.role || "agent",
-        agence: user?.region || user?.agence || "---",
-        oldValue: `Client: ${name}, Type: credit`,
-        newValue: "Client supprimé",
-      });
-
       toast({ title: "Client supprimé" });
     },
   });
@@ -43,7 +28,7 @@ export default function Contentieux() {
   const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
     e.stopPropagation();
     if (confirm(`Voulez-vous vraiment supprimer le client ${name}?`)) {
-      deleteMutation.mutate({ id, name });
+      deleteMutation.mutate(id);
     }
   };
 
