@@ -42,9 +42,17 @@ export interface IStorage {
   
   getRemboursements(creditId: string): Promise<Remboursement[]>;
   createRemboursement(remboursement: InsertRemboursement): Promise<Remboursement>;
+  getRecentTransactions(limit?: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
+  async getRecentTransactions(limit: number = 20): Promise<any[]> {
+    return await db.select()
+      .from(remboursements)
+      .orderBy(sql`${remboursements.date} DESC`)
+      .limit(limit);
+  }
+
   async getAgent(id: string): Promise<Agent | undefined> {
     const [agent] = await db.select().from(agents).where(eq(agents.id, id));
     return agent;

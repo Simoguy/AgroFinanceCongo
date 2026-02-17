@@ -217,6 +217,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/transactions/recent", async (req, res) => {
+    try {
+      const transactions = await storage.getRecentTransactions(20);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch recent transactions" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -64,7 +64,15 @@ export default function Profile() {
             </Button>
           </section>
         )}
-
+        <Button
+          className="w-full h-12 justify-start gap-3 bg-primary/10 text-primary hover:bg-primary/20 border-none"
+          onClick={() => setLocation("/admin/logs")}
+          data-testid="button-logs"
+        >
+          <ShieldCheck className="w-5 h-5" />
+          <span>Traçabilité Logs</span>
+        </Button>
+        
         <section className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Paramètres</h3>
 

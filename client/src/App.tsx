@@ -18,6 +18,7 @@ import AddCartePointage from "@/pages/AddCartePointage";
 import ClientDetails from "@/pages/ClientDetails";
 import AdminAccess from "@/pages/AdminAccess";
 import Profile from "@/pages/Profile";
+import AdminLogs from "@/pages/AdminLogs";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 import { AuthProvider, useAuth } from "@/lib/auth";
@@ -48,6 +49,8 @@ function Router() {
       <ProtectedRoute path="/add/carte-pointage" component={AddCartePointage} />
       <ProtectedRoute path="/client/:type/:id" component={ClientDetails} />
       <ProtectedRoute path="/admin/access" component={AdminAccess} />
+      <ProtectedRoute path="/admin/logs" component={AdminLogs} />
+      
       <ProtectedRoute path="/agent-portfolios" component={AgentPortfolios} />
       <ProtectedRoute path="/agent-portfolio/:agentId" component={AgentPortfolioDetail} />
       <ProtectedRoute path="/profile" component={Profile} />
