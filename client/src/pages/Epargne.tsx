@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 
 export default function Epargne() {
   const [, setLocation] = useLocation();
@@ -81,16 +82,30 @@ export default function Epargne() {
 function ClientItem({ id, name, amount, type }: { id: string, name: string, amount: number, type: string }) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const endpoint = type === 'carte-pointage' ? 'carte-pointages' : 'compte-courants';
       await apiRequest("DELETE", `/api/${endpoint}/${id}`);
+      return endpoint;
     },
-    onSuccess: () => {
+    onSuccess: (endpoint) => {
       queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
+
+      apiRequest("POST", "/api/admin/logs", {
+        action: "Suppression client",
+        details: `Client ${name} supprimé depuis l'écran Épargne (${endpoint})`,
+        agentId: user?.agentId || "---",
+        agentName: user?.name || "Agent",
+        role: user?.role || "agent",
+        agence: user?.region || user?.agence || "---",
+        oldValue: `Client: ${name}, Type: ${type}`,
+        newValue: "Client supprimé",
+      });
+
       toast({ title: "Client supprimé" });
     },
   });
