@@ -51,6 +51,10 @@ export default function Home() {
   const { data: comptes = [] } = useQuery<CompteCourant[]>({ queryKey: ["/api/compte-courants"] });
   const { data: cartes = [] } = useQuery<CartePointage[]>({ queryKey: ["/api/carte-pointages"] });
 
+  const { data: deletedCredits = [] } = useQuery<Credit[]>({ queryKey: ["/api/credits?deleted=only"], enabled: isAdmin });
+  const { data: deletedComptes = [] } = useQuery<CompteCourant[]>({ queryKey: ["/api/compte-courants?deleted=only"], enabled: isAdmin });
+  const { data: deletedCartes = [] } = useQuery<CartePointage[]>({ queryKey: ["/api/carte-pointages?deleted=only"], enabled: isAdmin });
+
   const zones = useMemo(() => {
     const allZones = [
       ...credits.map(c => c.zone),
@@ -86,10 +90,6 @@ export default function Home() {
   const contentieuxCredits = filteredCredits.filter(c => c.status === "contentieux" && !c.isDeleted);
   const contentieuxComptes = filteredComptes.filter(c => c.status === "contentieux" && !c.isDeleted);
   const contentieuxCartes = filteredCartes.filter(c => c.status === "contentieux" && !c.isDeleted);
-
-  const deletedCredits = filteredCredits.filter(c => c.isDeleted);
-  const deletedComptes = filteredComptes.filter(c => c.isDeleted);
-  const deletedCartes = filteredCartes.filter(c => c.isDeleted);
 
   const categories = [
     { id: "credit", icon: CreditCard, label: "Crédit", count: activeCredits.length },

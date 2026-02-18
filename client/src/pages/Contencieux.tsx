@@ -14,21 +14,23 @@ export default function Contentieux() {
   const clients = users.filter((u: any) => u.isContencieux);
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/credits/${id}`);
+    mutationFn: async ({ id, role }: { id: string; role: string }) => {
+      const endpoint = role === "client" ? "credits" : role === "carte_pointage" ? "carte-pointages" : "compte-courants";
+      await apiRequest("DELETE", `/api/${endpoint}/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
-      toast({ title: "Client supprimé" });
+      toast({ title: "Client envoyé dans la corbeille" });
+      setLocation("/corbeille");
     },
   });
 
-  const handleDelete = (e: React.MouseEvent, id: string, name: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string, name: string, role: string) => {
     e.stopPropagation();
     if (confirm(`Voulez-vous vraiment supprimer le client ${name}?`)) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate({ id, role });
     }
   };
 
@@ -60,7 +62,7 @@ export default function Contentieux() {
                 key={user.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                onClick={() => setLocation(`/client/credit/${user.id}`)}
+                onClick={() => setLocation(`/client/${user.role === "client" ? "credit" : user.role === "carte_pointage" ? "carte-pointage" : "compte-courant"}/${user.id}`)}
                 className="flex items-center gap-4 py-6 border-b border-slate-100 last:border-0 cursor-pointer active:bg-slate-50 transition-colors"
               >
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
@@ -75,7 +77,7 @@ export default function Contentieux() {
                       {totalToRepay.toLocaleString()}
                     </span>
                     <button 
-                      onClick={(e) => handleDelete(e, user.id, user.name)}
+                      onClick={(e) => handleDelete(e, user.id, user.name, user.role)}
                       className="p-2 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <AlertCircle className="w-6 h-6 text-red-500" />

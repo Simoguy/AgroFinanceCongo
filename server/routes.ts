@@ -7,10 +7,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CREDIT ROUTES
   app.get("/api/credits", async (req, res) => {
     try {
-      const { agentId, status } = req.query;
+      const { agentId, status, deleted } = req.query;
       const credits = await storage.getCredits(
         agentId as string | undefined,
-        status as string | undefined
+        status as string | undefined,
+        deleted as string | undefined
       );
       res.json(credits);
     } catch (error) {
@@ -66,10 +67,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // COMPTE COURANT ROUTES
   app.get("/api/compte-courants", async (req, res) => {
     try {
-      const { agentId, status } = req.query;
+      const { agentId, status, deleted } = req.query;
       const comptes = await storage.getCompteCourants(
         agentId as string | undefined,
-        status as string | undefined
+        status as string | undefined,
+        deleted as string | undefined
       );
       res.json(comptes);
     } catch (error) {
@@ -125,10 +127,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CARTE POINTAGE ROUTES
   app.get("/api/carte-pointages", async (req, res) => {
     try {
-      const { agentId, status } = req.query;
+      const { agentId, status, deleted } = req.query;
       const cartes = await storage.getCartePointages(
         agentId as string | undefined,
-        status as string | undefined
+        status as string | undefined,
+        deleted as string | undefined
       );
       res.json(cartes);
     } catch (error) {

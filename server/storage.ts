@@ -26,19 +26,19 @@ export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
   createAgent(agent: InsertAgent): Promise<Agent>;
   
-  getCredits(agentId?: string, status?: string): Promise<Credit[]>;
+  getCredits(agentId?: string, status?: string, deleted?: string): Promise<Credit[]>;
   getCredit(id: string): Promise<Credit | undefined>;
   createCredit(credit: InsertCredit): Promise<Credit>;
   updateCreditStatus(id: string, status: string): Promise<Credit | undefined>;
   deleteCredit(id: string): Promise<void>;
   
-  getCompteCourants(agentId?: string, status?: string): Promise<CompteCourant[]>;
+  getCompteCourants(agentId?: string, status?: string, deleted?: string): Promise<CompteCourant[]>;
   getCompteCourant(id: string): Promise<CompteCourant | undefined>;
   createCompteCourant(compte: InsertCompteCourant): Promise<CompteCourant>;
   updateCompteCourantStatus(id: string, status: string): Promise<CompteCourant | undefined>;
   deleteCompteCourant(id: string): Promise<void>;
   
-  getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]>;
+  getCartePointages(agentId?: string, status?: string, deleted?: string): Promise<CartePointage[]>;
   getCartePointage(id: string): Promise<CartePointage | undefined>;
   createCartePointage(carte: InsertCartePointage): Promise<CartePointage>;
   updateCartePointageStatus(id: string, status: string): Promise<CartePointage | undefined>;
@@ -83,9 +83,15 @@ export class DatabaseStorage implements IStorage {
     return agent;
   }
 
-  async getCredits(agentId?: string, status?: string): Promise<Credit[]> {
+  async getCredits(agentId?: string, status?: string, deleted?: string): Promise<Credit[]> {
+    if (deleted === "only") {
+      return await db.select().from(credits).where(eq(credits.isDeleted, true));
+    }
+
     let query = db.select().from(credits).where(eq(credits.isDeleted, false));
-    if (agentId && status) {
+    if (deleted === "include") {
+      query = db.select().from(credits);
+    } else if (agentId && status) {
       query = db.select().from(credits).where(
         and(eq(credits.agentId, agentId), eq(credits.status, status), eq(credits.isDeleted, false))
       );
@@ -125,9 +131,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(credits.id, id));
   }
 
-  async getCompteCourants(agentId?: string, status?: string): Promise<CompteCourant[]> {
+  async getCompteCourants(agentId?: string, status?: string, deleted?: string): Promise<CompteCourant[]> {
+    if (deleted === "only") {
+      return await db.select().from(compteCourants).where(eq(compteCourants.isDeleted, true));
+    }
+
     let query = db.select().from(compteCourants).where(eq(compteCourants.isDeleted, false));
-    if (agentId && status) {
+    if (deleted === "include") {
+      query = db.select().from(compteCourants);
+    } else if (agentId && status) {
       query = db.select().from(compteCourants).where(
         and(eq(compteCourants.agentId, agentId), eq(compteCourants.status, status), eq(compteCourants.isDeleted, false))
       );
@@ -167,9 +179,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(compteCourants.id, id));
   }
 
-  async getCartePointages(agentId?: string, status?: string): Promise<CartePointage[]> {
+  async getCartePointages(agentId?: string, status?: string, deleted?: string): Promise<CartePointage[]> {
+    if (deleted === "only") {
+      return await db.select().from(cartePointages).where(eq(cartePointages.isDeleted, true));
+    }
+
     let query = db.select().from(cartePointages).where(eq(cartePointages.isDeleted, false));
-    if (agentId && status) {
+    if (deleted === "include") {
+      query = db.select().from(cartePointages);
+    } else if (agentId && status) {
       query = db.select().from(cartePointages).where(
         and(eq(cartePointages.agentId, agentId), eq(cartePointages.status, status), eq(cartePointages.isDeleted, false))
       );
