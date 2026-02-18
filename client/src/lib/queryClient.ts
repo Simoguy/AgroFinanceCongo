@@ -21,6 +21,11 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
+
+  if (method.toUpperCase() === "POST" && url === "/api/admin/logs") {
+    await queryClient.invalidateQueries({ queryKey: ["/api/admin/logs"] });
+  }
+
   return res;
 }
 

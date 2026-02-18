@@ -231,6 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logs = await storage.getLogs(50);
       res.json(logs);
     } catch (error) {
+      console.error("Admin logs fetch error:", error);
       res.status(500).json({ error: "Failed to fetch logs" });
     }
   });
@@ -245,6 +246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const log = await storage.createLog(logData);
       res.status(201).json(log);
     } catch (error) {
+      console.error("Admin log creation error:", error);
       res.status(400).json({ error: "Failed to create log" });
     }
   });

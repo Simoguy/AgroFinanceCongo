@@ -2,14 +2,18 @@ import { ArrowLeft, ShieldCheck, History } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 export default function AdminLogs() {
   const [, setLocation] = useLocation();
 
-  const { data: logs = [] } = useQuery<any[]>({ 
-    queryKey: ["/api/admin/logs"] 
+  const { data: logs = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/logs"],
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   return (
