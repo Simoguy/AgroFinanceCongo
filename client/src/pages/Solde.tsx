@@ -90,7 +90,8 @@ function SoldedItem({ id, name, amount, type }: { id: string, name: string, amou
       queryClient.invalidateQueries({ queryKey: ["/api/credits"] });
       queryClient.invalidateQueries({ queryKey: ["/api/compte-courants"] });
       queryClient.invalidateQueries({ queryKey: ["/api/carte-pointages"] });
-      toast({ title: "Client supprimé" });
+      toast({ title: "Client envoyé dans la corbeille" });
+      setLocation("/corbeille");
     },
   });
 
