@@ -20,6 +20,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db.js";
 import { eq, and, sql, desc } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
@@ -53,7 +54,11 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async createLog(insertLog: InsertLog): Promise<Log> {
-    const [log] = await db.insert(logs).values(insertLog).returning();
+    const [log] = await db.insert(logs).values({
+      id: randomUUID(),
+      ...insertLog,
+      timestamp: new Date() as any,
+    }).returning();
     return log;
   }
 
