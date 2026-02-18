@@ -9,8 +9,11 @@ import { format } from "date-fns";
 export default function AdminLogs() {
   const [, setLocation] = useLocation();
 
-  const { data: logs = [] } = useQuery<any[]>({ 
-    queryKey: ["/api/admin/logs"] 
+  const { data: logs = [] } = useQuery<any[]>({
+    queryKey: ["/api/admin/logs"],
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   return (
